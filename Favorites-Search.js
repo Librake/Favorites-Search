@@ -1,15 +1,19 @@
 // ==UserScript==
 // @name         Rule34 Favorites Search
-// @version      3.0
-// @description  Search tags in Rule34 favorites and display as a grid of thumbnails
+// @version      1.0
+// @description  Adds a search bar to your favorites page
 // @author       Librake
 // @namespace    https://discord.gg/jZzYFNeCTw
 // @match        https://rule34.xxx/index.php?page=favorites&s=view&id=*
 // @icon         https://goo.su/zX0ivG
-// @grant       GM_setValue
-// @grant       GM_getValue
-// @grant       GM_xmlhttpRequest
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
+
+
+const UseCustomIcon = true; // Use custom red icon for favorites page: true/false
+
 
 (function () {
     'use strict';
@@ -94,17 +98,30 @@
         document.head.appendChild(shortcutIconLink);
     }
 
-    function loadAllImagesFromLocalStorage() {
-        const savedAllImages = localStorage.getItem('allImages');
-        if (!savedAllImages) return [];
+    function loadScript(url, callback) {
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = url;
+        script.onload = callback;
+        document.head.appendChild(script);
+    }
 
-        const loadedAllImages = savedAllImages ? JSON.parse(savedAllImages) : [];
-        return loadedAllImages;
+    function loadAllImagesFromLocalStorage(callback) {
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js', function() {
+            const storedData = localStorage.getItem('allImages');
+            if (!storedData) {
+                callback([]);
+                return;
+            }
+
+            const decompressedData = LZString.decompressFromUTF16(storedData);
+            const loadedAllImages = decompressedData ? JSON.parse(decompressedData) : [];
+            callback(loadedAllImages);
+        });
     }
 
     function saveAllImagesToLocalStorage() {
         const allImagesData = [];
-
         allImagesData.push(...allImages.map(img => ({
             src: img.getAttribute('src'),
             title: img.getAttribute('title'),
@@ -119,7 +136,16 @@
             })));
         }
 
-        localStorage.setItem('allImages', JSON.stringify(allImagesData));
+        const jsonStr = JSON.stringify(allImagesData);
+
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js', function() {
+            const compressedData = LZString.compressToUTF16(jsonStr);
+            try {
+                localStorage.setItem('allImages', compressedData);
+            } catch (e) {
+                console.error("Storage limit exceeded: ", e);
+            }
+        });
     }
 
     function getIdFromUrl() {
@@ -327,7 +353,8 @@
                 `Script's search uses keywords instead of tags, you can search by any part of the tag, such as '<span style="color: #EC91FF;">gahara</span>' instead of 'senjou<span style="color: #EC91FF;">gahara</span>_hitagi'.`,
                 "Verbatim mode - switch to standard search by full tags instead of keywords.",
                 "Or mode - should search result contain any or all of tags/keywords.",
-                "Use '-' to exclude tags/keywords."
+                "Use '-' to exclude tags/keywords.",
+                "A full scan takes a while, but it's only needed for the first search or after a reset."
             ];
 
             const list = document.createElement('ul');
@@ -570,6 +597,7 @@
 
     function scan() {
         if (needScan) {
+
             if (fullScan) {
                 searchAllPages();
             }
@@ -808,8 +836,6 @@
 
     function displayResultsInModal(tabTitle = 'Fav Search', columnWidth = 250) {
         document.body.innerHTML = '';
-
-        updateIcon('https://i.imgur.com/EtURK0r.png');
 
         localStorage.setItem('inputTags', JSON.stringify(inputTags));
         localStorage.setItem('prevFavCount', JSON.stringify(actualFavCount));
@@ -1057,7 +1083,9 @@
     }
 
     function init() {
-        updateIcon('https://i.imgur.com/EtURK0r.png');
+        if (UseCustomIcon) {
+            updateIcon('https://i.imgur.com/EtURK0r.png');
+        }
 
         SearchInputModule.createSearchInput();
 
@@ -1065,7 +1093,9 @@
         getFavoritesCount(userId).then(favoritesCount => {
             actualFavCount = favoritesCount;
 
-            loadedImages = loadAllImagesFromLocalStorage();
+            loadAllImagesFromLocalStorage(function(loadedImgs) {
+            loadedImages = loadedImgs;
+
 
 
             if (prevFavCount > 0 && loadedImages.length > 0) {
@@ -1087,6 +1117,8 @@
             else {
                 needScan = true;
             }
+
+        });
         });
 
     }
