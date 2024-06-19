@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rule34 Favorites Search
 // @version      1.0
-// @description  Adds a search bar to your favorites page
+// @description  Adds a search bar to the Favorites page
 // @author       Librake
 // @namespace    https://discord.gg/jZzYFNeCTw
 // @match        https://rule34.xxx/index.php?page=favorites&s=view&id=*
@@ -9,10 +9,11 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_xmlhttpRequest
+// @license      MIT
 // ==/UserScript==
 
 
-const UseCustomIcon = true; // Use custom red icon for favorites page: true/false
+const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/false
 
 
 (function () {
@@ -354,7 +355,8 @@ const UseCustomIcon = true; // Use custom red icon for favorites page: true/fals
                 "Verbatim mode - switch to standard search by full tags instead of keywords.",
                 "Or mode - should search result contain any or all of tags/keywords.",
                 "Use '-' to exclude tags/keywords.",
-                "A full scan takes a while, but it's only needed for the first search or after a reset."
+                "A full scan takes a while, but it's only needed for the first search or after a reset.",
+                "On the search results page, use the Back button on the screen or Esc instead of the Back button on your browser."
             ];
 
             const list = document.createElement('ul');
@@ -379,7 +381,7 @@ const UseCustomIcon = true; // Use custom red icon for favorites page: true/fals
             discordText.innerHTML = `
             <p><p>If you still have some questions or suggestions, visit the project's
             <a href="${discordLink}" target="_blank" style="color: #7289DA; text-decoration: underline; font-size: 1.2em;">Discord</a>.</p>
-            <p>You can also find some other scripts for Rule34 there.</p>`;
+            <p>You can also find some other useful scripts for Rule34 there.</p>`;
 
             function updateTooltipMaxHeight() {
                 const rect = tooltip.getBoundingClientRect();
