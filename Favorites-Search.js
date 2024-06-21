@@ -324,13 +324,13 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
 
 
             const closeButton = document.createElement('button');
-            closeButton.textContent = '×';
+            closeButton.textContent = '\u00D7';
             closeButton.style.position = 'absolute';
             closeButton.style.top = '10px';
             closeButton.style.right = '10px';
             closeButton.style.background = 'none';
             closeButton.style.border = 'none';
-            closeButton.style.color = '#fff';
+            closeButton.style.color = isMobile ? '#E08B82' : '#fff';;
             closeButton.style.fontSize = '20px';
             closeButton.style.cursor = 'pointer';
 
@@ -525,7 +525,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
 
 
             const clearButton = document.createElement('button');
-            clearButton.textContent = '×';
+            clearButton.textContent = '\u00D7';
             clearButton.style.border = 'none';
             clearButton.style.background = 'none';
             clearButton.style.fontSize = '25px';
