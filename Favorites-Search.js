@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Rule34 Favorites Search
-// @version      1.0
+// @version      1.1
 // @description  Adds a search bar to the Favorites page
 // @author       Librake
 // @namespace    https://discord.gg/jZzYFNeCTw
@@ -11,6 +11,12 @@
 // @grant        GM_xmlhttpRequest
 // @license      MIT
 // ==/UserScript==
+
+
+// === Version 1.1 Changelog ===
+// - Enhanced iOS compatibility, resolving critical issues.
+// - Implemented Dark Mode support for improved usability.
+// - Fixed search functionality to ignore case sensitivity.
 
 
 const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/false
