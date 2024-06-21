@@ -61,7 +61,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
 
         for (let i = 0; i < cssLinks.length; i++) {
             const href = cssLinks[i].getAttribute('href');
-            if (href && href.includes('mobile.css')) {
+            if (href && (href.includes('mobile.css') || href.includes('mobile-dark.css'))) {
                 return true;
             }
         }
