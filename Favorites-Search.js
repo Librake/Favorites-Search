@@ -40,11 +40,21 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
     let appendLoadedSave = false;
     let prevId;
     let lastImageId;
+    let textColor;
+    let darkMode = false;
 
     let userId = getIdFromUrl();
     let isMobile = isMobileVersion();
 
     loadSavedData();
+
+    function getBgColor() {
+        const bodyElement = document.querySelector('body');
+        const computedStyle = window.getComputedStyle(bodyElement);
+        const backgroundColor = computedStyle.backgroundColor;
+
+        return backgroundColor;
+    }
 
     function isMobileVersion() {
         const cssLinks = document.querySelectorAll('link[rel="stylesheet"][type="text/css"][media="screen"]');
@@ -209,6 +219,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
                 searchTags.length = 0;
                 negativeTags.length = 0;
                 inputTags = inputWrapper.querySelector('input').value.trim().split(' ');
+                inputTags = inputTags.map(tag => tag.toLowerCase());
                 inputTags.forEach(tag => {
                     if (tag.startsWith('-')) {
                         negativeTags.push(tag.substring(1));
@@ -284,6 +295,18 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             if (loadedTags.length > 0) {
                 inputWrapper.querySelector('input').value = loadedTags.join(' ');
             }
+
+            const spans = document.querySelectorAll('span');
+            spans.forEach(span => {
+                if (span.textContent.trim() === 'Help & Info') {
+                    const computedStyle = getComputedStyle(span);
+                    const currentColor = computedStyle.color;
+                    textColor = currentColor;
+                    if (currentColor !== 'rgb(0, 0, 0)') {
+                        darkMode = true;
+                    }
+                }
+            });
         }
 
         function createHelpTooltip(offset = 0) {
@@ -295,7 +318,6 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             const helpText = document.createElement('span');
             helpText.textContent = 'Help & Info';
             helpText.style.fontWeight = 'bold';
-            helpText.style.color = '#000000';
             helpText.style.textDecoration = 'underline';
 
             const tooltip = document.createElement('div');
@@ -440,10 +462,9 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             function hideTooltip() {
                 tooltip.style.visibility = 'hidden';
                 tooltip.style.opacity = '0';
-                helpText.style.color = '#000000';
+                helpText.style.color = textColor;
             }
         }
-
 
         function createCheckbox(id, labelText, isChecked, onChange) {
             const container = document.createElement('div');
@@ -501,8 +522,6 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             return container;
         }
 
-
-
         function createSearchInputField() {
             const inputWrapper = document.createElement('div');
             inputWrapper.style.position = 'relative';
@@ -548,7 +567,6 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
 
             return inputWrapper;
         }
-
 
         function createSearchButton(onClick) {
             const button = document.createElement('button');
@@ -826,6 +844,8 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
 
 
     function displayResultsInModal(tabTitle = 'Fav Search', columnWidth = 250) {
+        const bgColor = getBgColor();
+
         document.body.innerHTML = '';
 
         localStorage.setItem('inputTags', JSON.stringify(inputTags));
@@ -846,7 +866,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
         resultContainer.id = 'resultContainer';
         resultContainer.style.width = '100%';
         resultContainer.style.height = '100vh';
-        resultContainer.style.backgroundColor = '#AAE5A4';
+        resultContainer.style.backgroundColor = bgColor;
         resultContainer.style.color = 'white';
         resultContainer.style.overflowY = 'auto';
         resultContainer.style.zIndex = '10000';
@@ -871,7 +891,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             imageCount.style.fontFamily = 'Verdana, sans-serif';
             imageCount.style.fontSize = '20px';
             imageCount.style.fontWeight = 'bold';
-            imageCount.style.color = 'black';
+            imageCount.style.color = textColor;
             imageCount.style.textAlign = 'left';
             imageCount.style.marginBottom = '10px';
 
@@ -899,7 +919,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             const toggleRemoveLabelText = document.createElement('label');
             toggleRemoveLabelText.htmlFor = 'toggleRemoveLabelCheckbox';
             toggleRemoveLabelText.textContent = 'Show Remove Labels';
-            toggleRemoveLabelText.style.color = 'black';
+            toggleRemoveLabelText.style.color = textColor;
             toggleRemoveLabelText.style.fontFamily = 'Verdana, sans-serif';
             toggleRemoveLabelText.style.fontSize = '16px';
             toggleRemoveLabelText.style.fontWeight = 'bold';
@@ -997,7 +1017,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
         backButton.style.right = '20px';
         backButton.style.backgroundColor = 'transparent';
         backButton.style.border = 'none';
-        backButton.style.color = '#0b3d91';
+        backButton.style.color = darkMode ? textColor : '#0b3d91';
         backButton.style.fontSize = '24px';
         backButton.style.fontWeight = 'bold';
         backButton.style.cursor = 'pointer';
@@ -1006,7 +1026,8 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             backButton.style.color = '#660000';
         });
         backButton.addEventListener('mouseout', () => {
-            backButton.style.color = '#0b3d91';
+            backButton.style.color = darkMode ? textColor : '#0b3d91';
+
         });
         backButton.addEventListener('click', () => {
             localStorage.setItem('fromBack', JSON.stringify(true));
@@ -1047,7 +1068,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             const removeLabel = document.createElement('a');
             removeLabel.href = '#';
             removeLabel.className = 'removeLabel';
-            removeLabel.style.color = '#009';
+            removeLabel.style.color = darkMode ? textColor : '#009';
             removeLabel.style.fontWeight = 'bold';
             removeLabel.style.textDecoration = 'none';
             removeLabel.style.fontFamily = 'Verdana, sans-serif';
