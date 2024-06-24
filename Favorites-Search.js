@@ -17,7 +17,7 @@
 // === Version 1.2 Changelog ===
 // - Fixed scanning issues such as blank results page and freezing before completion.
 // - Added settings menu.
-// - New feature: Favorites detection (highlights your favorites with a red border on any page of the site).
+// - New feature: Favorites detection (highlights your favorites with a red border on other pages of the site).
 
 
 
