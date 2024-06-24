@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         Dev Favorites Search
-// @version      1.1
+// @name         Rule34 Favorites Search
+// @version      1.2
 // @description  Adds a search bar to the Favorites page
 // @author       Librake
 // @namespace    https://discord.gg/jZzYFNeCTw
@@ -14,13 +14,11 @@
 // ==/UserScript==
 
 
-// === Version 1.1 Changelog ===
-// - Enhanced iOS compatibility, resolving critical issues.
-// - Implemented Dark Mode support for improved usability.
-// - Fixed search functionality to ignore case sensitivity.
+// === Version 1.2 Changelog ===
+// - Fixed scanning issues such as blank results page and freezing before completion.
+// - Added settings menu.
+// - New feature: Favorites detection (highlights your favorites with a red border on any page of the site).
 
-
-const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/false
 
 
 (function () {
@@ -31,20 +29,14 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
     /* lz-string.js - JavaScript compression and decompression using LZ-based algorithms. (c) 2013-2015 Pieroxy, MIT License */
     var localLZString;
 
-     function onLZStringReady(event) {
-        //localLZString = event.detail.LZS ? event.detail.LZS : inlineLZString;
-
+    function onLZStringReady(event) {
          try {
             if (event && event.detail && event.detail.LZS) {
                 localLZString = event.detail.LZS;
-                console.log('script');
             } else {
-                console.log('inline');
                 localLZString = inlineLZString;
             }
         } catch (error) {
-                console.log('inline');
-
             localLZString = inlineLZString;
         }
     }
@@ -67,6 +59,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
 
     const discordLink = "https://discord.gg/jZzYFNeCTw"
 
+    const scriptVersion = '1.2';
     let allImages = [];
     let loadedImages = [];
     let images;
@@ -90,6 +83,8 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
     let darkMode = false;
     let userId;
     let isMobile;
+    let customIcon = true;
+    let borderFavs = true;
 
     const onFavPage = isOnFavPage();
 
@@ -127,13 +122,32 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
         return false;
     }
 
+    function isDarkMode() {
+        const cssLinks = document.querySelectorAll('link[rel="stylesheet"][type="text/css"][media="screen"]');
+
+        for (let i = 0; i < cssLinks.length; i++) {
+            const href = cssLinks[i].getAttribute('href');
+            if (href && (href.includes('dark.css'))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     function loadSavedData() {
         const savedInputTags = localStorage.getItem('inputTags');
         loadedTags = savedInputTags ? JSON.parse(savedInputTags) : [];
+
         const savedHardSearch = localStorage.getItem('hardSearch');
         hardSearch = savedHardSearch ? JSON.parse(savedHardSearch) : false;
         const savedOrMode = localStorage.getItem('orMode');
         orMode = savedOrMode ? JSON.parse(savedOrMode) : false;
+
+        const savedCustomIcon = localStorage.getItem('customIcon');
+        customIcon = savedCustomIcon ? JSON.parse(savedCustomIcon) : true;
+        const savedborderFavs = localStorage.getItem('borderFavs');
+        borderFavs = savedborderFavs ? JSON.parse(savedborderFavs) : true;
 
         const savedFromBack = localStorage.getItem('fromBack');
         fromBack = savedFromBack ? JSON.parse(savedFromBack) : false;
@@ -268,7 +282,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             inputContainer.style.marginLeft = '20px';
 
             const helpContainer = createHelpTooltip(isMobile ? -20 : 0);
-            const settingsContainer = createSettings(0);
+            const settingsContainer = createSettings();
 
             const createToggleElement = isMobile ? createToggleButton : createCheckbox;
             const verbatimModeContainer = createToggleElement('verbatimModeCheckbox', 'Verbatim mode', hardSearch, (checked) => {
@@ -306,20 +320,25 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
                 const container1 = document.createElement('div');
                 container1.style.display = 'flex';
                 container1.style.position = 'relative';
-                container1.style.width = 'calc(100% - 20px - 20px)';
+                container1.style.width = 'calc(100% - 10px - 20px)';
                 container1.style.maxWidth = '430px';
-                container1.style.marginLeft = '20px';
+                container1.style.marginLeft = '10px';
+                container1.style.alignItems = 'center';
 
                 progress.style.position = 'absolute';
                 progress.style.right = '20px';
 
+                settingsContainer.style.marginRight = '20px';
+
+                container1.appendChild(settingsContainer);
                 container1.appendChild(helpContainer);
                 container1.appendChild(progress);
+
                 inputContainer.appendChild(container1);
 
                 const container2 = document.createElement('div');
                 container2.appendChild(inputWrapper);
-                container2.style.marginTop = '17px';
+                container2.style.marginTop = '10px';
 
                 inputContainer.appendChild(container2);
 
@@ -348,7 +367,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
                 inputContainer.appendChild(orModeContainer);
                 inputContainer.appendChild(inputWrapper);
                 inputContainer.appendChild(searchButton);
-                //inputContainer.appendChild(settingsContainer);
+                inputContainer.appendChild(settingsContainer);
                 inputContainer.appendChild(progress);
             }
 
@@ -378,7 +397,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             });
         }
 
-        function createSettings(offset = 0) {
+        function createSettings() {
             const settingsContainer = document.createElement('div');
             settingsContainer.style.display = 'inline-block';
             settingsContainer.style.marginRight = '10px';
@@ -386,13 +405,19 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
 
             const label = document.createElement('span');
             const img = document.createElement('img');
-            img.src = 'https://i.imgur.com/tPbyJNF.png'; // замените URL_TO_YOUR_IMAGE на фактический URL изображения
-            img.alt = 'S'; // текст, который будет показан, если изображение не загрузится
-            img.style.width = '24px'; // задайте ширину изображения
-            img.style.height = '24px'; // задайте высоту изображения
+            const icon = 'https://raw.githubusercontent.com/Librake/Favorites-Search/main/res/settings.svg';
+            const iconDark = 'https://raw.githubusercontent.com/Librake/Favorites-Search/main/res/settings_dark.svg';
+            img.src = darkMode ? iconDark : icon;
+            img.alt = 'S';
+
+            const labelSize = isMobile ? 30 : 22;
+            img.style.width = `${labelSize}px`;
+            img.style.height = `${labelSize}px`;
+            img.style.fill = 'red';
             label.appendChild(img);
             label.style.fontWeight = 'bold';
             label.style.textDecoration = 'underline';
+            label.style.cursor = 'pointer';
 
             const tooltip = document.createElement('div');
             tooltip.style.position = 'absolute';
@@ -409,15 +434,46 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             tooltip.style.visibility = 'hidden';
             tooltip.style.opacity = '0';
             tooltip.style.transition = 'opacity 0.2s';
-            tooltip.style.width = '300px';
             tooltip.style.maxWidth = 'calc(100vw - 30px)';
             tooltip.style.height = 'auto';
             tooltip.style.maxHeight = '400px';
-            tooltip.style.marginTop = '10px';
-            tooltip.style.marginLeft = `${offset}px`;
+            tooltip.style.marginTop = '9px';
             tooltip.style.zIndex = '9999';
             tooltip.style.overflowX = 'auto';
 
+            if (darkMode) {
+                tooltip.style.border = '1px solid #fff';
+            }
+
+            function adjustTooltipPosition() {
+                const rect = tooltip.getBoundingClientRect();
+                const cont = settingsContainer.getBoundingClientRect();
+
+                const offset = -150;
+                const width = 500;
+                let addOffset = 0;
+
+                if (isMobile) {
+                    tooltip.style.width = 'calc(100vw - 30px)';
+                    tooltip.style.maxWidth = '450px';
+
+                    addOffset = -(cont.left + offset) + 20;
+                }
+                else {
+                    tooltip.style.width = `${width-50}px`;
+
+                    if (cont.left + offset + width + 30 > window.innerWidth) {
+                        addOffset = -(cont.left + offset + width - window.innerWidth) - 30;
+                    }
+
+                    if (cont.left + offset < 0) {
+                        addOffset = -(cont.left + offset) + 20;
+                    }
+
+                }
+                tooltip.style.marginLeft = `${offset + addOffset}px`;
+
+            }
 
             const closeButton = document.createElement('button');
             closeButton.textContent = '\u00D7';
@@ -426,116 +482,130 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             closeButton.style.right = '10px';
             closeButton.style.background = 'none';
             closeButton.style.border = 'none';
-            closeButton.style.color = isMobile ? '#E08B82' : '#fff';;
+            closeButton.style.color = isMobile ? '#E08B82' : '#fff';
             closeButton.style.fontSize = '20px';
             closeButton.style.cursor = 'pointer';
 
-            closeButton.onclick = () => {
+            closeButton.onclick = (event) => {
+                event.stopPropagation();
                 hideTooltip();
             };
 
+            function createCheckboxWithDescription(labelText, descriptionText, initialState, action) {
+                const container = document.createElement('div');
+                container.style.marginBottom = '10px';
 
-            const content = [
-                `Script's search uses keywords instead of tags, you can search by any part of the tag, such as '<span style="color: #EC91FF;">gahara</span>' instead of 'senjou<span style="color: #EC91FF;">gahara</span>_hitagi'.`,
-                "Verbatim mode - switch to standard search by full tags instead of keywords.",
-                "Or mode - should search result contain any or all of tags/keywords.",
-                "Use '-' to exclude tags/keywords.",
-                "A full scan takes a while, but it's only needed for the first search or after a reset.",
-                "On the search results page, use the Back button on the screen or Esc instead of the Back button on your browser."
-            ];
 
-            const list = document.createElement('ul');
-            list.style.paddingLeft = '10px';
-            list.style.margin = '0';
-            list.style.listStyleType = 'disc';
+                const checkbox = createCheckbox(labelText, labelText, initialState, (checked) => {
+                    action(checked);
+                });
 
-            content.forEach(text => {
-                const listItem = document.createElement('li');
-                listItem.innerHTML = text;
-                listItem.style.padding = '3px';
-                listItem.style.margin = '5px 0';
-                list.appendChild(listItem);
-            });
+                const description = document.createElement('span');
+                description.innerHTML = descriptionText;
+                description.style.display = 'block';
+                description.style.fontSize = '14px';
+                description.style.color = '#999';
+                description.style.marginLeft = '30px';
 
-            tooltip.appendChild(list);
+                container.appendChild(checkbox);
+                container.appendChild(description);
+
+                return container;
+            }
+
+            const checkboxContainer1 = createCheckboxWithDescription(
+                'Custom icon',
+                'Use custom red icon for the Favorites tab.',
+                customIcon,
+                (checked) => {
+                    customIcon = checked;
+                    localStorage.setItem('customIcon', JSON.stringify(checked));
+                    location.reload();
+                }
+            );
+
+            const checkboxContainer2 = createCheckboxWithDescription(
+                'Favorites detection',
+                'Highlights images with a red border on any page of the site if they are already in your favorites.<br>(requires scanned)',
+                borderFavs,
+                (checked) => {
+                    borderFavs = checked;
+                    localStorage.setItem('borderFavs', JSON.stringify(checked));
+                }
+            );
 
             const tooltipText = document.createElement('div');
-            tooltipText.innerHTML = "If smth doesn't work properly try to";
-
-            const discordText = document.createElement('div');
-            discordText.innerHTML = `
-            <p><p>If you still have some questions or suggestions, visit the project's
-            <a href="${discordLink}" target="_blank" style="color: #7289DA; text-decoration: underline; font-size: 1.2em;">Discord</a>.</p>
-            <p>You can also find some other useful scripts for Rule34 there.</p>`;
+            tooltipText.innerHTML = "If something doesn't work properly, try to...";
 
             function updateTooltipMaxHeight() {
                 const rect = tooltip.getBoundingClientRect();
                 const availableHeight = window.innerHeight - rect.top - 10;
                 tooltip.style.maxHeight = `${availableHeight}px`;
             }
+            function updateSize() {
+                updateTooltipMaxHeight();
+                adjustTooltipPosition();
+            }
             updateTooltipMaxHeight();
-            window.addEventListener('resize', updateTooltipMaxHeight);
+            window.addEventListener('resize', updateSize);
 
-
-            const resetButton = document.createElement('button');
-            resetButton.textContent = 'Reset';
-            resetButton.style.backgroundColor = '#e26c5e';
-            resetButton.style.color = '#fff';
-            resetButton.style.border = 'none';
-            resetButton.style.padding = '5px 10px';
-            resetButton.style.borderRadius = '5px';
-            resetButton.style.cursor = 'pointer';
-            resetButton.style.marginTop = '10px';
-            resetButton.style.marginLeft = '10px';
-            resetButton.style.zIndex = '10000';
-            resetButton.onmouseover = () => {
-                resetButton.style.backgroundColor = '#c45a4b';
-            };
-            resetButton.onmouseout = () => {
-                resetButton.style.backgroundColor = '#e26c5e';
-            };
-            resetButton.onclick = reset;
-
-            tooltipText.appendChild(resetButton);
-            tooltipText.appendChild(discordText);
             tooltip.appendChild(closeButton);
-            tooltip.appendChild(tooltipText);
+            if(!isMobile) {
+                tooltip.appendChild(checkboxContainer1);
+            }
+            tooltip.appendChild(checkboxContainer2);
 
-            let hideTimeout;
-            label.onclick = () => {
-                label.style.color = '#CC0000';
-                clearTimeout(hideTimeout);
-                tooltip.style.visibility = 'visible';
-                tooltip.style.opacity = '1';
-            };
-            label.onmouseover = () => {
+            let tooltipVisible = false;
 
+            label.onclick = (event) => {
+                event.stopPropagation();
+                if (tooltipVisible) {
+                    hideTooltip();
+                } else {
+                    showTooltip();
+                }
             };
-            label.onmouseout = (event) => {
 
-            };
-            tooltip.onmouseover = () => {
-                clearTimeout(hideTimeout);
-                tooltip.style.visibility = 'visible';
-                tooltip.style.opacity = '1';
-            };
-            tooltip.onmouseout = (event) => {
-                hideTimeout = setTimeout(() => {
-                    if (!label.contains(event.relatedTarget)) {
-                        hideTooltip();
+            setTimeout(function() {
+                const spans = document.querySelectorAll('span');
+                spans.forEach(span => {
+                    if (span.textContent.trim() === 'Help & Info') {
+                        span.addEventListener('mouseover', () => {
+                            hideTooltip();
+                        });
                     }
-                }, 300);
-            };
+                });
+            }, 300);
+
+
+            document.addEventListener('click', (event) => {
+                if (tooltipVisible && !tooltip.contains(event.target) && event.target !== label) {
+                    hideTooltip();
+                }
+            });
 
             settingsContainer.appendChild(label);
             settingsContainer.appendChild(tooltip);
 
             return settingsContainer;
 
+            function showTooltip() {
+                adjustTooltipPosition();
+                label.style.color = '#CC0000';
+                tooltip.style.visibility = 'visible';
+                tooltip.style.opacity = '1';
+                tooltipVisible = true;
+
+                img.style.transform = 'rotate(10deg)';
+            }
+
             function hideTooltip() {
                 tooltip.style.visibility = 'hidden';
                 tooltip.style.opacity = '0';
-                label.style.color = textColor;
+                label.style.color = '';
+                tooltipVisible = false;
+
+                img.style.transform = 'rotate(0deg)';
             }
         }
 
@@ -569,10 +639,32 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             tooltip.style.maxWidth = 'calc(100vw - 30px)';
             tooltip.style.height = 'auto';
             tooltip.style.maxHeight = '400px';
-            tooltip.style.marginTop = '10px';
+            tooltip.style.marginTop = '15px';
             tooltip.style.marginLeft = `${offset}px`;
             tooltip.style.zIndex = '9999';
             tooltip.style.overflowX = 'auto';
+
+            if (darkMode) {
+                tooltip.style.border = '1px solid #fff';
+            }
+
+            function adjustTooltipPosition() {
+                const cont = helpContainer.getBoundingClientRect();
+
+                const offset = 0;
+                let addOffset = 0;
+
+                if (isMobile) {
+                    tooltip.style.width = 'calc(100vw - 30px)';
+                    tooltip.style.maxWidth = '450px';
+
+                    addOffset = -(cont.left + offset) + 20;
+                }
+
+                tooltip.style.marginLeft = `${offset + addOffset}px`;
+
+            }
+
 
 
             const closeButton = document.createElement('button');
@@ -629,8 +721,14 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
                 const availableHeight = window.innerHeight - rect.top - 10;
                 tooltip.style.maxHeight = `${availableHeight}px`;
             }
+
+            function updateSize() {
+                updateTooltipMaxHeight();
+                adjustTooltipPosition();
+            }
             updateTooltipMaxHeight();
-            window.addEventListener('resize', updateTooltipMaxHeight);
+
+            window.addEventListener('resize', updateSize);
 
 
             const resetButton = document.createElement('button');
@@ -659,18 +757,23 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
 
             let hideTimeout;
             helpText.onmouseover = () => {
+                adjustTooltipPosition();
+
                 helpText.style.color = '#CC0000';
                 clearTimeout(hideTimeout);
                 tooltip.style.visibility = 'visible';
                 tooltip.style.opacity = '1';
             };
+
+            const timeToHide = isMobile ? 0 : 300;
             helpText.onmouseout = (event) => {
                 hideTimeout = setTimeout(() => {
                     if (!tooltip.contains(event.relatedTarget)) {
                         hideTooltip();
                     }
-                }, 300);
+                }, timeToHide);
             };
+
             tooltip.onmouseover = () => {
                 clearTimeout(hideTimeout);
                 tooltip.style.visibility = 'visible';
@@ -681,7 +784,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
                     if (!helpText.contains(event.relatedTarget)) {
                         hideTooltip();
                     }
-                }, 300);
+                }, timeToHide);
             };
 
             helpContainer.appendChild(helpText);
@@ -704,7 +807,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.id = id;
-            checkbox.style.marginRight = '5px';
+            checkbox.style.marginRight = isMobile ? '15px' : '5px';
             checkbox.style.verticalAlign = 'middle';
             checkbox.checked = isChecked;
             checkbox.onchange = () => onChange(checkbox.checked);
@@ -1087,7 +1190,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
             }
             catch (e) {
                 setTimeout(() => {
-                    alert(`Error: Scan results cannot be cached, so each search requires a fresh scan.\nHowever, you can still view the search results.\nTry updating or changing your browser to resolve the issue.\nPlease report the bug if this issue persists.`);
+                    alert(`Error: Scan results cannot be cached, so each search requires a fresh scan.\nHowever, you can still view the search results.\nTry using the Tampermonkey and updating or changing your browser to resolve the issue.\nPlease report the bug if this issue persists.`);
                 }, 1000);
             }
         }
@@ -1332,9 +1435,11 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
     }
 
     function init() {
-        if (UseCustomIcon) {
+        if (customIcon) {
             updateIcon('https://i.imgur.com/EtURK0r.png');
         }
+
+        localStorage.setItem('scriptVersion', scriptVersion);
 
         SearchInputModule.createSearchInput();
 
@@ -1359,6 +1464,9 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
                         allImages = loadedImages;
                         document.getElementById('progress').textContent = 'scanned';
                     }
+                    else {
+                        document.getElementById('progress').textContent = 'scanned (new)';
+                    }
                 });
             }
             else {
@@ -1371,12 +1479,14 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
     }
 
     const exploreModule = (() => {
-        const SHOW_BORDER = true;
         const BORDER_COLOR = '#DB1C32';
         const BORDER_THICKNESS = 3;
 
         function highlightFavs() {
-            if (SHOW_BORDER) {
+            const savedborderFavs = localStorage.getItem('borderFavs');
+            borderFavs = savedborderFavs ? JSON.parse(savedborderFavs) : true;
+
+            if (borderFavs) {
                 loadAllImagesFromLocalStorage(function(loadedImgs) {
 
                     const idSet = new Set();
@@ -1413,6 +1523,7 @@ const UseCustomIcon = true; // Use custom red icon for the Favorites page: true/
     if(onFavPage) {
         userId = getIdFromUrl();
         isMobile = isMobileVersion();
+        darkMode = isDarkMode();
         loadSavedData();
         init();
     }
