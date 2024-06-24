@@ -526,7 +526,7 @@
 
             const checkboxContainer2 = createCheckboxWithDescription(
                 'Favorites detection',
-                'Highlights images with a red border on any page of the site if they are already in your favorites.<br>(requires scanned)',
+                'Highlights images with a red border on other pages of the site if they are already in your favorites.<br>(requires scanned)',
                 borderFavs,
                 (checked) => {
                     borderFavs = checked;
