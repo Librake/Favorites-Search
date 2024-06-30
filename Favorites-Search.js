@@ -69,6 +69,7 @@
     let negativeTags = [];
     let hardSearch = false;
     let orMode = false;
+    let useBlacklist = true;
     let inputTags = [];
     let fromBack = false;
     let needScan = false;
@@ -143,6 +144,9 @@
         hardSearch = savedHardSearch ? JSON.parse(savedHardSearch) : false;
         const savedOrMode = localStorage.getItem('orMode');
         orMode = savedOrMode ? JSON.parse(savedOrMode) : false;
+
+        const savedBlacklist = localStorage.getItem('useBlacklist');
+        useBlacklist = savedBlacklist ? JSON.parse(savedBlacklist) : true;
 
         const savedCustomIcon = localStorage.getItem('customIcon');
         customIcon = savedCustomIcon ? JSON.parse(savedCustomIcon) : true;
@@ -295,6 +299,11 @@
                 localStorage.setItem('orMode', JSON.stringify(checked));
             });
 
+            const useBlacklistContainer = createToggleElement('useBlacklist', 'Use blacklist', useBlacklist, (checked) => {	
+                useBlacklist = checked;
+                localStorage.setItem('useBlacklist', JSON.stringify(checked));
+            });
+
             const inputWrapper = createSearchInputField();
 
             const searchButton = createSearchButton(() => {
@@ -353,6 +362,7 @@
 
                 container3.appendChild(verbatimModeContainer);
                 container3.appendChild(orModeContainer);
+                container3.appendChild(useBlacklistContainer);
                 container3.appendChild(searchButton);
                 inputContainer.appendChild(container3);
 
@@ -365,6 +375,7 @@
                 inputContainer.appendChild(helpContainer);
                 inputContainer.appendChild(verbatimModeContainer);
                 inputContainer.appendChild(orModeContainer);
+                inputContainer.appendChild(useBlacklistContainer);
                 inputContainer.appendChild(inputWrapper);
                 inputContainer.appendChild(searchButton);
                 inputContainer.appendChild(settingsContainer);
@@ -966,7 +977,13 @@
             return null;
         }
     }
-
+    function getCookieValue(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        if (match) {
+            return match[2];
+        }
+        return null;
+    }
     async function extractImagesAndTags(doc, loadedImgs) {
         if (loadedImgs) {
             images = loadedImgs;
@@ -974,7 +991,14 @@
         else {
             images = doc.querySelectorAll('.thumb img[src]');
         }
-
+        if (useBlacklist) {
+            const blacklistedTags = getCookieValue('tag_blacklist');
+            if (blacklistedTags) {
+                blacklistedTags.split('%2520').forEach(tag => {
+                    negativeTags.push(tag);
+                });
+            }
+        }
         images.forEach(image => {
             if (!loadedImgs) {
                 allImages.push(image);
