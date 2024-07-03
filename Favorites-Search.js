@@ -994,7 +994,7 @@
         if (useBlacklist) {
             const blacklistedTags = getCookieValue('tag_blacklist');
             if (blacklistedTags) {
-                blacklistedTags.split('%2520').forEach(tag => {
+                decodeURIComponent(blacklistedTags).split('%20').forEach(tag => {
                     negativeTags.push(tag);
                 });
             }
