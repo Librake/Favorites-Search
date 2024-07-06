@@ -291,6 +291,10 @@
             const createToggleElement = isMobile ? createToggleButton : createCheckbox;
             const verbatimModeContainer = createToggleElement('verbatimModeCheckbox', 'Verbatim mode', hardSearch, (checked) => {
                 hardSearch = checked;
+                if (checked === false) {
+                    toggleActiveState(useBlacklistContainer, false);
+                    localStorage.setItem('useBlacklist', JSON.stringify(false));
+                }
                 localStorage.setItem('hardSearch', JSON.stringify(checked));
             });
 
@@ -299,11 +303,24 @@
                 localStorage.setItem('orMode', JSON.stringify(checked));
             });
 
-            const useBlacklistContainer = createToggleElement('useBlacklist', 'Use blacklist', useBlacklist, (checked) => {	
+            const useBlacklistContainer = createToggleElement('useBlacklist', 'Use blacklist', useBlacklist, (checked) => {
                 useBlacklist = checked;
-                localStorage.setItem('useBlacklist', JSON.stringify(checked));
-            });
+                // If verbatim mode is disabled, blacklist is disabled as well, because the rule34 blacklist with normal tags
+                toggleActiveState(verbatimModeContainer, checked);
 
+                hardSearch = checked;
+                localStorage.setItem('useBlacklist', JSON.stringify(checked));
+                localStorage.setItem('hardSearch', JSON.stringify(checked));
+            });
+            function toggleActiveState(element, isActive) {
+                if (isMobile) {
+                    console.log(element);
+                    element.childNodes[0].style.backgroundColor = isActive ? '#2196F3' : '#e0e0e0';
+                    element.childNodes[0].style.color = isActive ? '#fff' : '#555';
+                } else {
+                    element.childNodes[0].checked = isActive;
+                }
+            }
             const inputWrapper = createSearchInputField();
 
             const searchButton = createSearchButton(() => {
