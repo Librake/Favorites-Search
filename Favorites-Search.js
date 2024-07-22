@@ -69,7 +69,7 @@
     let negativeTags = [];
     let hardSearch = false;
     let orMode = false;
-    let useBlacklist = true;
+    let useBlacklist = false;
     let inputTags = [];
     let fromBack = false;
     let needScan = false;
@@ -146,7 +146,7 @@
         orMode = savedOrMode ? JSON.parse(savedOrMode) : false;
 
         const savedBlacklist = localStorage.getItem('useBlacklist');
-        useBlacklist = savedBlacklist ? JSON.parse(savedBlacklist) : true;
+        useBlacklist = savedBlacklist ? JSON.parse(savedBlacklist) : false;
 
         const savedCustomIcon = localStorage.getItem('customIcon');
         customIcon = savedCustomIcon ? JSON.parse(savedCustomIcon) : true;
