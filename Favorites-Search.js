@@ -333,6 +333,7 @@ const SearchInputModule = (() => {
                     }
                     data.forEach(item => {
                         const option = document.createElement('div');
+                        option.classList.add(`tag-type-${item.type}`);
                         option.innerHTML = `<strong>${item.label.substr(0, value.length)}</strong>${item.label.substr(value.length)}`;
                         option.innerHTML += `<input type="hidden" value="${item.value}">`;
                         option.addEventListener('click', function(e) {
@@ -374,7 +375,6 @@ const SearchInputModule = (() => {
                 addActive(list, currentFocus);
             } else if (event.key === 'Enter') {
                 event.preventDefault();
-                console.log(currentFocus);
                 if (currentFocus > -1) {
                     if (list) {
                         list[currentFocus].click();
