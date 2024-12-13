@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         Rule34 Favorites Search
-// @version      1.2
+// @name         Rule34 Favorites Search dev
+// @version      1.3
 // @description  Adds a search bar to the Favorites page
 // @author       Librake
 // @namespace    https://discord.gg/jZzYFNeCTw
@@ -813,7 +813,7 @@ const SearchInputModule = (() => {
         function createHelpTooltip(offset = 0) {
             const helpContainer = document.createElement('div');
             helpContainer.style.display = 'inline-block';
-            helpContainer.style.marginRight = '50px';
+            helpContainer.style.marginRight = '25px';
             helpContainer.style.position = 'relative';
 
             const helpText = document.createElement('span');
@@ -1003,7 +1003,7 @@ const SearchInputModule = (() => {
         function createCheckbox(id, labelText, isChecked, onChange) {
             const container = document.createElement('div');
             container.style.display = 'inline-block';
-            container.style.marginRight = '50px';
+            container.style.marginRight = '25px';
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
