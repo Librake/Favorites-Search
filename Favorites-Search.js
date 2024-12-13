@@ -1615,11 +1615,12 @@ const SearchInputModule = (() => {
         function appendResult(result) {
             const resultItem = document.createElement('div');
             resultItem.className = 'resultItem';
+            resultItem.id = `favorite-${result.id}`; // Уникальный ID для элемента
             resultItem.style.textAlign = 'center';
             resultItem.style.width = `${columnWidth}px`;
             resultItem.style.margin = '10px';
             resultItem.style.alignSelf = 'flex-start';
-
+        
             const removeLabel = document.createElement('a');
             removeLabel.href = '#';
             removeLabel.className = 'removeLabel';
@@ -1629,23 +1630,44 @@ const SearchInputModule = (() => {
             removeLabel.style.fontFamily = 'Verdana, sans-serif';
             removeLabel.style.fontSize = '100%';
             removeLabel.style.display = removeLabelsShown ? 'inline' : 'none';
-            removeLabel.onclick = () => {
-                document.location = `index.php?page=favorites&s=delete&id=${result.id}`;
-                return false;
-            };
             removeLabel.textContent = 'Remove';
-
+        
+            // Обработчик удаления
+            removeLabel.onclick = (event) => {
+                event.preventDefault(); // Отменяем переход по ссылке
+                console.log("Removing...");
+                fetch(`index.php?page=favorites&s=delete&id=${result.id}`, {
+                    method: 'GET',
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log("Successfully removed");
+                        const element = document.getElementById(`favorite-${result.id}`);
+                        if (element) {
+                            element.remove(); // Удаляем элемент из DOM
+                        } else {
+                            console.error(`Element with ID favorite-${result.id} not found`);
+                        }
+                    } else {
+                        console.error("Failed to remove from favorites");
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+            };
+        
             const borderStyle = result.video ? 'border: 3px solid rgb(0, 0, 255);' : '';
-
+        
             resultItem.innerHTML = `
-        <a href="index.php?page=post&s=view&id=${result.id}" id="p${result.id}" target="_blank">
-            <img src="${result.src}" title="" border="0" alt="" style="max-width: 100%; max-height: 100%; ${borderStyle}">
-        </a><br>
-    `;
-
+                <a href="index.php?page=post&s=view&id=${result.id}" id="p${result.id}" target="_blank">
+                    <img src="${result.src}" title="" border="0" alt="" style="max-width: 100%; max-height: 100%; ${borderStyle}">
+                </a><br>
+            `;
+        
             resultItem.appendChild(removeLabel);
             resultContainer.appendChild(resultItem);
         }
+        
+        
 
     }
     function init() {
