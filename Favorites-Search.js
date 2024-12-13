@@ -69,6 +69,7 @@
     let negativeTags = [];
     let hardSearch = false;
     let orMode = false;
+    let useBlacklist = false;
     let inputTags = [];
     let fromBack = false;
     let needScan = false;
@@ -143,6 +144,9 @@
         hardSearch = savedHardSearch ? JSON.parse(savedHardSearch) : false;
         const savedOrMode = localStorage.getItem('orMode');
         orMode = savedOrMode ? JSON.parse(savedOrMode) : false;
+
+        const savedBlacklist = localStorage.getItem('useBlacklist');
+        useBlacklist = savedBlacklist ? JSON.parse(savedBlacklist) : false;
 
         const savedCustomIcon = localStorage.getItem('customIcon');
         customIcon = savedCustomIcon ? JSON.parse(savedCustomIcon) : true;
@@ -272,32 +276,173 @@
     }
 
 
-    const SearchInputModule = (() => {
+const SearchInputModule = (() => {
+    let currentFocus;
+    let searchInput = document.getElementById('searchTagInput');
+    let autocompleteOpen = false;
+    let searchButton;
+    function handleSearchBar(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            searchButton.click();
+        }
+    }
+    function createAutocomplete() {
+        const autocomplete = document.createElement('div');
+        autocomplete.id = 'autocomplete-list';
+        autocomplete.className = 'autocomplete-items';
+        autocomplete.style.position = 'absolute';
+        autocomplete.style.zIndex = '9999';
+        autocomplete.style.backgroundColor = darkMode ? "rgb(48, 48, 48)" : 'white';
+        autocomplete.style.color = 'black';
+        autocomplete.style.border = '1px solid #ccc';
+        autocomplete.style.padding = '5px';
 
-        function createSearchInput() {
-            const header = document.getElementById('header');
-            const navbar = document.getElementById('navbar');
+        return autocomplete;
+    }
+    function handleAutoComplete(event) {
+            let value = this.value;
+            if (!value || value.length === 0) {
+                closeAllLists();
+                return false;
+            }
 
-            const inputContainer = document.createElement('div');
-            inputContainer.style.marginLeft = '20px';
+            value = value.trim().split(' ').pop();
+            let hasMinus = false;
+            // If value has - at the beginning, remove it
 
-            const helpContainer = createHelpTooltip(isMobile ? -20 : 0);
-            const settingsContainer = createSettings();
+            if (value[0] === '-') {
+                hasMinus = true;
+                value = value.substr(1);
+            }
 
-            const createToggleElement = isMobile ? createToggleButton : createCheckbox;
-            const verbatimModeContainer = createToggleElement('verbatimModeCheckbox', 'Verbatim mode', hardSearch, (checked) => {
-                hardSearch = checked;
-                localStorage.setItem('hardSearch', JSON.stringify(checked));
-            });
+            closeAllLists();
+            currentFocus = -1;
 
-            const orModeContainer = createToggleElement('orMode', 'Or mode', orMode, (checked) => {
-                orMode = checked;
-                localStorage.setItem('orMode', JSON.stringify(checked));
-            });
+            fetch(`https://ac.rule34.xxx/autocomplete.php?q=${value}`)
+                .then(response => response.json())
+                .then(data => {
+                    closeAllLists();
+                    autocompleteOpen = true;
+                    const autocomplete = createAutocomplete();
+                   
+                    this.parentNode.appendChild(autocomplete);
+                    if (data.length === 0) {
+                        autocomplete.remove();
+                        return false;
+                    }
+                    data.forEach(item => {
+                        const option = document.createElement('div');
+                        option.classList.add(`tag-type-${item.type}`);
+                        option.innerHTML = `<strong>${item.label.substr(0, value.length)}</strong>${item.label.substr(value.length)}`;
+                        option.innerHTML += `<input type="hidden" value="${item.value}">`;
+                        option.addEventListener('click', function(e) {
+                            const optionValue = hasMinus ? `-${this.getElementsByTagName('input')[0].value}` : this.getElementsByTagName('input')[0].value;
+                            const tags = searchInput.value.split(' ');
+                            tags.pop();
+                            tags.push(optionValue);
+                            tags.push('');
+                            searchInput.value = tags.join(' ');
+                            closeAllLists();
+                        });
+                        option.addEventListener('mouseover', function() {
+                            const items = autocomplete.getElementsByTagName('div');
+                            for (let i = 0; i < items.length; i++) {
+                                items[i].style.backgroundColor = '';
+                            }
+                            this.style.backgroundColor = 'rgb(170, 229, 164)';
+                            if (darkMode) this.style.textShadow = "1px 1px 1px #000,-1px -1px 1px #000,1px -1px 1px #000,-1px 1px 1px #000";
+                            currentFocus = Array.prototype.indexOf.call(items, this);
+                            autocompleteOpen = true;
+                        });
+                        autocomplete.appendChild(option);
+                    });
+                });
+        }
+        function handleAutocompleteSelection(event) {
 
-            const inputWrapper = createSearchInputField();
-
-            const searchButton = createSearchButton(() => {
+            let list = document.getElementById('autocomplete-list');
+            if (list) {
+                list = list.getElementsByTagName('div');
+            }
+            if (event.key === 'ArrowDown') {
+                autocompleteOpen = true;
+                currentFocus++;
+                addActive(list, currentFocus);
+            } else if (event.key === 'ArrowUp') {
+                autocompleteOpen = true;
+                currentFocus--;
+                addActive(list, currentFocus);
+            } else if (event.key === 'Enter') {
+                event.preventDefault();
+                if (currentFocus > -1) {
+                    if (list) {
+                        list[currentFocus].click();
+                    } else {
+                        searchButton.click();
+                    }
+                } else if (currentFocus === -1) {
+                    searchButton.click();
+                }
+            }
+        }
+        function handleAutocompleteClear(event) {
+                const value = this.value;
+                if (!value || value.length === 0) {
+                    closeAllLists();
+                    return false;
+                }
+        }
+        function initAutoComplete(searchInput) {
+            // https://ac.rule34.xxx/autocomplete.php?q=
+            inputWrapper.querySelector('input').removeEventListener('keyup', handleSearchBar, true);
+            searchInput.addEventListener('input',handleAutoComplete , 'autocomplete');
+            searchInput.addEventListener('keydown',handleAutocompleteSelection , 'autocomplete');
+    
+            searchInput.addEventListener('keyup', handleAutocompleteClear, 'autocomplete');
+    
+            document.addEventListener('click', function(event) {
+                closeAllLists(event.target);
+            }, 'autocomplete');
+        }
+        function addActive(list, currentFocus) {
+            if (!list) {
+                return false;
+            }
+            removeActive(list);
+            if (currentFocus >= list.length) {
+                currentFocus = 0;
+            }
+            if (currentFocus < 0) {
+                currentFocus = list.length - 1;
+            }
+            list[currentFocus].style.backgroundColor = 'rgb(170, 229, 164)';
+            if (darkMode) list[currentFocus].style.textShadow = "1px 1px 1px #000,-1px -1px 1px #000,1px -1px 1px #000,-1px 1px 1px #000";
+        }
+        function removeActive(list) {
+            for (let i = 0; i < list.length; i++) {
+                list[i].style.backgroundColor = '';
+                if (darkMode) list[i].style.textShadow = '';
+            }
+        }
+    
+        function closeAllLists() {
+            const items = document.getElementsByClassName('autocomplete-items');
+            for (let i = 0; i < items.length; i++) {
+                items[i].parentNode.removeChild(items[i]);
+            }
+            autocompleteOpen = false;
+        }
+        function destroyAutocomplete(searchInput, inputWrapper) {
+            searchInput.removeEventListener('input', handleAutoComplete, 'autocomplete');
+            searchInput.removeEventListener('keydown', handleAutocompleteSelection, 'autocomplete');
+            searchInput.removeEventListener('keyup', handleAutocompleteClear, 'autocomplete');
+            closeAllLists();
+            inputWrapper.querySelector('input').addEventListener('keyup', handleSearchBar, true);
+            console.log('Autocomplete destroyed');
+        }
+        const inputWrapper = createSearchInputField();
+            searchButton = createSearchButton(() => {
                 searchTags.length = 0;
                 negativeTags.length = 0;
                 inputTags = inputWrapper.querySelector('input').value.trim().split(' ');
@@ -311,6 +456,60 @@
                 });
                 scan();
             });
+        function createSearchInput() {
+            const header = document.getElementById('header');
+            const navbar = document.getElementById('navbar');
+
+            const inputContainer = document.createElement('div');
+            inputContainer.style.marginLeft = '20px';
+
+            const helpContainer = createHelpTooltip(isMobile ? -20 : 0);
+            const settingsContainer = createSettings();
+            const createToggleElement = isMobile ? createToggleButton : createCheckbox;
+            const verbatimModeContainer = createToggleElement('verbatimModeCheckbox', 'Verbatim mode', hardSearch, (checked) => {
+                hardSearch = checked;
+                if (checked === false) {
+                    toggleActiveState(useBlacklistContainer, false);
+                    destroyAutocomplete(searchInput, inputWrapper);
+                    localStorage.setItem('useBlacklist', JSON.stringify(false));
+                }
+                if (checked === true) {
+                    initAutoComplete(searchInput);
+                }
+                localStorage.setItem('hardSearch', JSON.stringify(checked));
+            });
+            
+
+
+            const orModeContainer = createToggleElement('orMode', 'Or mode', orMode, (checked) => {
+                orMode = checked;
+                localStorage.setItem('orMode', JSON.stringify(checked));
+            });
+
+            const useBlacklistContainer = createToggleElement('useBlacklist', 'Use blacklist', useBlacklist, (checked) => {
+                useBlacklist = checked;
+                // If verbatim mode is disabled, blacklist is disabled as well, because the rule34 blacklist with normal tags
+                toggleActiveState(verbatimModeContainer, checked);
+
+                hardSearch = checked;
+                if (checked === true) {
+                    initAutoComplete(searchInput);
+                } else {
+                    destroyAutocomplete(searchInput, inputWrapper);
+                }
+                localStorage.setItem('useBlacklist', JSON.stringify(checked));
+                localStorage.setItem('hardSearch', JSON.stringify(checked));
+            });
+            function toggleActiveState(element, isActive) {
+                if (isMobile) {
+                    console.log(element);
+                    element.childNodes[0].style.backgroundColor = isActive ? '#2196F3' : '#e0e0e0';
+                    element.childNodes[0].style.color = isActive ? '#fff' : '#555';
+                } else {
+                    element.childNodes[0].checked = isActive;
+                }
+            }
+            
 
             const progress = document.createElement('span');
             progress.id = 'progress';
@@ -353,6 +552,7 @@
 
                 container3.appendChild(verbatimModeContainer);
                 container3.appendChild(orModeContainer);
+                container3.appendChild(useBlacklistContainer);
                 container3.appendChild(searchButton);
                 inputContainer.appendChild(container3);
 
@@ -365,6 +565,7 @@
                 inputContainer.appendChild(helpContainer);
                 inputContainer.appendChild(verbatimModeContainer);
                 inputContainer.appendChild(orModeContainer);
+                inputContainer.appendChild(useBlacklistContainer);
                 inputContainer.appendChild(inputWrapper);
                 inputContainer.appendChild(searchButton);
                 inputContainer.appendChild(settingsContainer);
@@ -373,12 +574,6 @@
 
             header.insertBefore(inputContainer, navbar.nextSibling);
 
-            inputWrapper.querySelector('input').addEventListener('keyup', function (event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    searchButton.click();
-                }
-            });
 
             if (loadedTags.length > 0) {
                 inputWrapper.querySelector('input').value = loadedTags.join(' ');
@@ -395,6 +590,9 @@
                     }
                 }
             });
+            if (hardSearch === true) initAutoComplete(searchInput);
+            else destroyAutocomplete(searchInput, inputWrapper);
+
         }
 
         function createSettings() {
@@ -607,6 +805,8 @@
 
                 img.style.transform = 'rotate(0deg)';
             }
+            
+        
         }
 
         function createHelpTooltip(offset = 0) {
@@ -874,7 +1074,8 @@
             input.style.borderRadius = '3px';
             input.style.width = '100%';
             input.style.boxSizing = 'border-box';
-
+            input.autocomplete = 'off';
+            searchInput = input;
 
             const clearButton = document.createElement('button');
             clearButton.textContent = '\u00D7';
@@ -966,7 +1167,13 @@
             return null;
         }
     }
-
+    function getCookieValue(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        if (match) {
+            return match[2];
+        }
+        return null;
+    }
     async function extractImagesAndTags(doc, loadedImgs) {
         if (loadedImgs) {
             images = loadedImgs;
@@ -974,7 +1181,14 @@
         else {
             images = doc.querySelectorAll('.thumb img[src]');
         }
-
+        if (useBlacklist) {
+            const blacklistedTags = getCookieValue('tag_blacklist');
+            if (blacklistedTags) {
+                decodeURIComponent(blacklistedTags).split('%20').forEach(tag => {
+                    negativeTags.push(tag);
+                });
+            }
+        }
         images.forEach(image => {
             if (!loadedImgs) {
                 allImages.push(image);
@@ -1433,7 +1647,6 @@
         }
 
     }
-
     function init() {
         if (customIcon) {
             updateIcon('https://i.imgur.com/EtURK0r.png');
@@ -1442,7 +1655,6 @@
         localStorage.setItem('scriptVersion', scriptVersion);
 
         SearchInputModule.createSearchInput();
-
 
         getFavoritesCount(userId).then(favoritesCount => {
             actualFavCount = favoritesCount;
