@@ -187,6 +187,21 @@
         document.head.appendChild(shortcutIconLink);
     }
 
+    function getRemovalQueue() {
+        const removalQueue = localStorage.getItem('removalQueue');
+        return removalQueue ? JSON.parse(removalQueue) : [];
+    }
+
+    function addToRemovalQueue(id) {
+        const removalQueue = getRemovalQueue(); // Читаем текущий список
+        removalQueue.push(id);
+        localStorage.setItem('removalQueue', JSON.stringify(removalQueue)); // Сохраняем обновлённый список
+    }
+
+    function clearRemovalQueue() {
+        localStorage.removeItem('removalQueue'); // Удаляем элемент из хранилища
+    }
+
     function loadAllImagesFromLocalStorage(callback) {
         try {
             const storedData = localStorage.getItem('allImages');
@@ -1402,6 +1417,7 @@ const SearchInputModule = (() => {
         if (needScan) {
             try {
             saveAllImagesToLocalStorage();
+            clearRemovalQueue();
             }
             catch (e) {
                 setTimeout(() => {
@@ -1634,6 +1650,7 @@ const SearchInputModule = (() => {
         
             // Обработчик удаления
             removeLabel.onclick = (event) => {
+                addToRemovalQueue(result.id);
                 event.preventDefault(); // Отменяем переход по ссылке
                 console.log("Removing...");
                 fetch(`index.php?page=favorites&s=delete&id=${result.id}`, {
@@ -1667,7 +1684,7 @@ const SearchInputModule = (() => {
             resultContainer.appendChild(resultItem);
         }
         
-        
+
 
     }
     function init() {
@@ -1683,7 +1700,20 @@ const SearchInputModule = (() => {
             actualFavCount = favoritesCount;
 
             loadAllImagesFromLocalStorage(function(loadedImgs) {
-            loadedImages = loadedImgs;
+
+            const removalQueue = getRemovalQueue();
+            const removalSet = new Set();
+            removalQueue.forEach(id => {
+                removalSet.add(id);
+            });
+
+            loadedImages = loadedImgs.filter(img => {
+                if (removalSet.has(img.id)) {
+                    return false;
+                }
+                return true;
+            });
+
 
             if (prevFavCount > 0 && loadedImages.length > 0) {
 
