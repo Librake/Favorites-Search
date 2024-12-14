@@ -6,10 +6,12 @@
 // @namespace    https://discord.gg/jZzYFNeCTw
 // @match        https://rule34.xxx/index.php?page=favorites&s=view&id=*
 // @match        https://rule34.xxx/index.php?page=post&s=list*
+// @match        https://rule34.xxx/index.php?page=post&s=view&id=*
 // @icon         https://goo.su/zX0ivG
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_xmlhttpRequest
+// @grant        none
 // @license      MIT
 // ==/UserScript==
 
@@ -88,20 +90,28 @@
     let customIcon = true;
     let borderFavs = true;
 
-    const onFavPage = isOnFavPage();
+    const PageType = {
+        FAVORITE_VIEW: 'FAVORITE_VIEW',
+        POST_LIST: 'POST_LIST',
+        POST_VIEW: 'POST_VIEW',
+        UNKNOWN: 'UNKNOWN',
+    };
 
-
-    function isOnFavPage() {
+    function getPageType() {
         const url = window.location.href;
-
+    
         if (url.includes('page=favorites&s=view&id=')) {
-            return true;
+            return PageType.FAVORITE_VIEW;
         } else if (url.includes('page=post&s=list')) {
-            return false;
+            return PageType.POST_LIST;
+        } else if (url.includes('page=post&s=view')) {
+            return PageType.POST_VIEW;
         } else {
-            return null;
+            return PageType.UNKNOWN;
         }
     }
+
+    const pageType = getPageType();
 
     function getBgColor() {
         const bodyElement = document.querySelector('body');
@@ -191,17 +201,51 @@
         const removalQueue = localStorage.getItem('removalQueue');
         return removalQueue ? JSON.parse(removalQueue) : [];
     }
-
     function addToRemovalQueue(id) {
         const removalQueue = getRemovalQueue(); // Читаем текущий список
         removalQueue.push(id);
         localStorage.setItem('removalQueue', JSON.stringify(removalQueue)); // Сохраняем обновлённый список
     }
-
     function clearRemovalQueue() {
         localStorage.removeItem('removalQueue'); // Удаляем элемент из хранилища
     }
 
+    function getAdditionalQueue() {
+        const data = localStorage.getItem('additionalQueue');
+        return data ? JSON.parse(data) : [];
+    }
+    function addToAdditionalQueue(id) {
+        const queue = getAdditionalQueue();
+        if (!queue.includes(id)) {
+            queue.push(id);
+            localStorage.setItem('additionalQueue', JSON.stringify(queue));
+        }
+    }
+    function clearAdditionalQueue() {
+        localStorage.removeItem('additionalQueue');
+    }
+    function removeFromAdditionalQueue(id) {
+        // Получаем текущий список из localStorage
+        const additionalQueueData = localStorage.getItem('additionalQueue');
+        const additionalQueue = additionalQueueData ? JSON.parse(additionalQueueData) : [];
+    
+        // Находим индекс указанного id
+        const index = additionalQueue.indexOf(id);
+        if (index !== -1) {
+            // Удаляем id из списка
+            additionalQueue.splice(index, 1);
+    
+            // Сохраняем обновленный список в localStorage
+            localStorage.setItem('additionalQueue', JSON.stringify(additionalQueue));
+    
+            console.log(`ID ${id} успешно удален из additionalQueue.`);
+        } else {
+            console.log(`ID ${id} не найден в additionalQueue.`);
+        }
+    }
+    
+    
+    
     function loadAllImagesFromLocalStorage(callback) {
         try {
             const storedData = localStorage.getItem('allImages');
@@ -1418,6 +1462,7 @@ const SearchInputModule = (() => {
             try {
             saveAllImagesToLocalStorage();
             clearRemovalQueue();
+            clearAdditionalQueue();
             }
             catch (e) {
                 setTimeout(() => {
@@ -1696,6 +1741,37 @@ const SearchInputModule = (() => {
 
         SearchInputModule.createSearchInput();
 
+        document.addEventListener(
+            "click",
+            function (e) {
+                const target = e.target.closest("a");
+        
+                if (
+                    target &&
+                    target.getAttribute("onclick") &&
+                    target.getAttribute("onclick").includes("favorites&s=delete")
+                ) {  
+                    // Извлекаем строку из атрибута onclick
+                    const onclickCode = target.getAttribute("onclick");
+        
+                    // Извлекаем ID из строки onclick
+                    const idMatch = onclickCode.match(/id=(\d+)/);
+                    if (idMatch) {
+                        const id = idMatch[1];
+                        console.log(`ID для удаления: ${id}`);
+                        removeFromAdditionalQueue(id);
+                        addToRemovalQueue(id);
+                    }
+                }
+            },
+            true
+        );
+        
+        
+        
+        
+        
+
         getFavoritesCount(userId).then(favoritesCount => {
             actualFavCount = favoritesCount;
 
@@ -1747,16 +1823,89 @@ const SearchInputModule = (() => {
         const BORDER_COLOR = '#DB1C32';
         const BORDER_THICKNESS = 3;
 
+        function onPostPage() {
+        const originalAddFav = window.addFav;
+            window.addFav = function(postId) {
+                console.log(`Пост с ID ${postId} добавлен в избранное`);
+                addToAdditionalQueue(postId);
+                originalAddFav.apply(this, arguments);
+            };
+
+            document.addEventListener('click', function(e) {
+                const target = e.target.closest('a');
+                if (target && target.getAttribute('onclick') && target.getAttribute('onclick').includes('addFav')) {
+                }
+            }, true);
+
+        }
+
+        function handleUserReturn() {
+            console.log('User returned to the page');
+            const additionalQueue = getAdditionalQueue();
+            const additionalSet = new Set();
+            additionalQueue.forEach(id => {
+                additionalSet.add(id);
+            });
+
+            if (additionalQueue.length > 0) {
+                const imageListDivs = document.querySelectorAll('div.image-list');
+                imageListDivs.forEach(imageListDiv => {
+                    const thumbs = imageListDiv.querySelectorAll('span.thumb');
+
+                    thumbs.forEach(thumb => {
+                        const images = thumb.querySelectorAll('img');
+
+                        images.forEach(img => {
+                            const imgId = img.src.split('?')[1];
+                            if (additionalSet.has(imgId)) {
+                                img.style.border = `${BORDER_THICKNESS}px solid ${BORDER_COLOR}`;
+                            }
+                        });
+                    });
+                });
+            }
+        }
+
         function highlightFavs() {
             const savedborderFavs = localStorage.getItem('borderFavs');
             borderFavs = savedborderFavs ? JSON.parse(savedborderFavs) : true;
 
             if (borderFavs) {
+                console.log("explore init");
+
+                // Отслеживание переключения вкладок
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        handleUserReturn();
+                    }
+                });
+
+                // Отслеживание первой загрузки и возврата из кэша
+                window.addEventListener('pageshow', (event) => {
+                    if (event.persisted) {
+                        //handleUserReturn();
+                    }
+                });
+                
+
+
                 loadAllImagesFromLocalStorage(function(loadedImgs) {
 
                     const idSet = new Set();
                     loadedImgs.forEach(img => {
                         idSet.add(img.id);
+                    });
+
+                    const additionalQueue = getAdditionalQueue();
+                    const additionalSet = new Set();
+                    additionalQueue.forEach(id => {
+                        additionalSet.add(id);
+                    });
+
+                    const removalQueue = getRemovalQueue();
+                    const removalSet = new Set();
+                    removalQueue.forEach(id => {
+                        removalSet.add(id);
                     });
 
                     if (loadedImgs.length > 0) {
@@ -1769,7 +1918,7 @@ const SearchInputModule = (() => {
 
                                 images.forEach(img => {
                                     const imgId = img.src.split('?')[1];
-                                    if (idSet.has(imgId)) {
+                                    if (additionalSet.has(imgId) || (idSet.has(imgId) && !removalSet.has(imgId))) {
                                         img.style.border = `${BORDER_THICKNESS}px solid ${BORDER_COLOR}`;
                                     }
                                 });
@@ -1780,23 +1929,27 @@ const SearchInputModule = (() => {
             }
         }
         return {
-            highlightFavs
+            highlightFavs,
+            onPostPage
         };
     })();
 
 
-    if(onFavPage) {
+    if(pageType === PageType.FAVORITE_VIEW) {
         userId = getIdFromUrl();
         isMobile = isMobileVersion();
         darkMode = isDarkMode();
         loadSavedData();
         init();
     }
-    else {
+    else if (pageType === PageType.POST_LIST) {
         exploreModule.highlightFavs();
+    } 
+    else if (pageType === PageType.POST_VIEW) {
+        exploreModule.onPostPage();
     }
 
-
+    
 
 
 })();
