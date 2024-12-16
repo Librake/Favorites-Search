@@ -1240,7 +1240,7 @@ const SearchInputModule = (() => {
     }
     async function extractImagesAndTags(doc, loadedImgs) {
         const postScores = new Map();
-        
+
         if (loadedImgs) {
             images = loadedImgs;
         }
@@ -1272,7 +1272,7 @@ const SearchInputModule = (() => {
                 });
             }
         }
-        images.forEach((image) => {
+        images.forEach(image => {
             if (!loadedImgs) {
                 const imgId = getThumbImgId(image);
                 image.score = postScores.get(imgId) || null;
