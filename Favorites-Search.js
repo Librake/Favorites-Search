@@ -244,7 +244,9 @@
         }
     }
     
-    
+    function getThumbImgId(img) {
+        return img.src.split('?')[1]
+    }
     
     function loadAllImagesFromLocalStorage(callback) {
         try {
@@ -270,8 +272,9 @@
         allImagesData.push(...allImages.map(img => ({
             src: img.getAttribute('src'),
             title: img.getAttribute('title'),
-            link: `index.php?page=post&s=view&id=${img.src.split('?')[1]}`,
-            id: img.src.split('?')[1]
+            link: `index.php?page=post&s=view&id=${getThumbImgId(img)}`,
+            id: getThumbImgId(img),
+            score: img.score
         })));
 
         if (appendLoadedSave) {
@@ -279,7 +282,8 @@
                 src: img.src,
                 title: img.title,
                 link: img.link,
-                id: img.id
+                id: img.id,
+                score: img.score
             })));
         }
 
@@ -1235,10 +1239,29 @@ const SearchInputModule = (() => {
         return null;
     }
     async function extractImagesAndTags(doc, loadedImgs) {
+        const postScores = new Map();
+        
         if (loadedImgs) {
             images = loadedImgs;
         }
         else {
+            const scripts = doc.querySelectorAll('script');
+            const postRegex = /posts\[(\d+)]\s*=\s*{[\s\S]*?score:\s*['"](\d+)['"]/g;
+
+
+            scripts.forEach((script) => {
+                if (script.textContent.includes('score:')) {
+                    const scriptContent = script.textContent;
+
+                    let match;
+                    while ((match = postRegex.exec(scriptContent)) !== null) {
+                        const postId = match[1];
+                        const score = match[2];
+                        postScores.set(postId, score);
+                    }
+                }
+            });
+
             images = doc.querySelectorAll('.thumb img[src]');
         }
         if (useBlacklist) {
@@ -1249,8 +1272,11 @@ const SearchInputModule = (() => {
                 });
             }
         }
-        images.forEach(image => {
+        images.forEach((image) => {
             if (!loadedImgs) {
+                const imgId = getThumbImgId(image);
+                image.score = postScores.get(imgId) || null;
+                
                 allImages.push(image);
             }
 
@@ -1299,17 +1325,19 @@ const SearchInputModule = (() => {
                             link: image.link,
                             src: image.src,
                             id: image.link.split('id=')[1],
-                            video: image.title.trim().split(' ').includes('video')
+                            video: image.title.trim().split(' ').includes('video'),
+                            score: image.score
                         });
                     }
                     else {
-                        const imageId = image.src.split('?')[1];
+                        const imageId = getThumbImgId(image);
                         const postLink = `index.php?page=post&s=view&id=${imageId}`
                         results.push({
                             link: postLink,
                             src: image.src,
                             id: imageId,
-                            video: image.title.trim().split(' ').includes('video')
+                            video: image.title.trim().split(' ').includes('video'),
+                            score: image.score
                         });
                     }
 
@@ -1317,7 +1345,7 @@ const SearchInputModule = (() => {
             }
         });
         if (!loadedImgs && images.length) {
-            lastImageId = images[images.length - 1].src.split('?')[1];
+            lastImageId = getThumbImgId(images[images.length - 1]);
         }
     }
 
@@ -1768,53 +1796,46 @@ const SearchInputModule = (() => {
         );
         
         
-        
-        
-        
-
         getFavoritesCount(userId).then(favoritesCount => {
             actualFavCount = favoritesCount;
 
             loadAllImagesFromLocalStorage(function(loadedImgs) {
-
-            const removalQueue = getRemovalQueue();
-            const removalSet = new Set();
-            removalQueue.forEach(id => {
-                removalSet.add(id);
-            });
-
-            loadedImages = loadedImgs.filter(img => {
-                if (removalSet.has(img.id)) {
-                    return false;
-                }
-                return true;
-            });
-
-
-            if (prevFavCount > 0 && loadedImages.length > 0) {
-
-
-                let loadedFirstId = loadedImages[0].link.split('id=')[1];
-
-                fetchFavoritesPage(0).then(pageDoc => {
-                    let actualFirstId = pageDoc.querySelectorAll('.thumb img')[0].parentElement.href.split('id=')[1];
-                    if ((loadedFirstId != actualFirstId) && !fromBack || (userId != prevId) || (favoritesCount != prevFavCount)) {
-                        needScan = true;
-                    }
-                    if (!needScan) {
-                        allImages = loadedImages;
-                        document.getElementById('progress').textContent = 'scanned';
-                    }
-                    else {
-                        document.getElementById('progress').textContent = 'scanned (new)';
-                    }
+                const removalQueue = getRemovalQueue();
+                const removalSet = new Set();
+                removalQueue.forEach(id => {
+                    removalSet.add(id);
                 });
-            }
-            else {
-                needScan = true;
-            }
 
-        });
+                loadedImages = loadedImgs.filter(img => {
+                    if (removalSet.has(img.id)) {
+                        return false;
+                    }
+                    return true;
+                });
+
+
+                if (prevFavCount > 0 && loadedImages.length > 0) {
+                    let loadedFirstId = loadedImages[0].link.split('id=')[1];
+
+                    fetchFavoritesPage(0).then(pageDoc => {
+                        let actualFirstId = pageDoc.querySelectorAll('.thumb img')[0].parentElement.href.split('id=')[1];
+                        if ((loadedFirstId != actualFirstId) && !fromBack || (userId != prevId) || (favoritesCount != prevFavCount)) {
+                            needScan = true;
+                        }
+                        if (!needScan) {
+                            allImages = loadedImages;
+                            document.getElementById('progress').textContent = 'scanned';
+                        }
+                        else {
+                            document.getElementById('progress').textContent = 'scanned (new)';
+                        }
+                    });
+                }
+                else {
+                    needScan = true;
+                }
+
+            });
         });
 
     }
@@ -1856,7 +1877,7 @@ const SearchInputModule = (() => {
                         const images = thumb.querySelectorAll('img');
 
                         images.forEach(img => {
-                            const imgId = img.src.split('?')[1];
+                            const imgId = getThumbImgId(img);
                             if (additionalSet.has(imgId)) {
                                 img.style.border = `${BORDER_THICKNESS}px solid ${BORDER_COLOR}`;
                             }
@@ -1917,7 +1938,7 @@ const SearchInputModule = (() => {
                                 const images = thumb.querySelectorAll('img');
 
                                 images.forEach(img => {
-                                    const imgId = img.src.split('?')[1];
+                                    const imgId = getThumbImgId(img);
                                     if (additionalSet.has(imgId) || (idSet.has(imgId) && !removalSet.has(imgId))) {
                                         img.style.border = `${BORDER_THICKNESS}px solid ${BORDER_COLOR}`;
                                     }
