@@ -1743,11 +1743,12 @@ const SearchInputModule = (() => {
                     headerContainer.style.flexDirection = 'row';
                     headerContainer.style.justifyContent = 'space-between';
                     headerContainer.style.alignItems = 'center';
+                    headerContainer.style.position = 'relative';
 
                     imageCount.style.position = 'absolute';
                     imageCount.style.marginBottom = '0';
                     imageCount.style.marginLeft = '650px';
-                    //imageCount.style.transform = 'translateX(-50%)';
+                    imageCount.style.top = 'auto'; 
 
                     controlsContainer.style.flexDirection = 'row';
                     controlsContainer.style.justifyContent = 'flex-start';
