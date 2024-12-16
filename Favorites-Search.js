@@ -1522,15 +1522,46 @@ const SearchInputModule = (() => {
         resultContainer.style.alignContent = 'flex-start';
         resultContainer.style.alignItems = 'flex-start';
 
+        const imageCount = document.createElement('div');
+        let hidenVideoNumber = 0;
+        function updateImageCounter() {
+            imageCount.textContent = `Number of images: ${results.length - hidenVideoNumber}`;
+        }
+
 
         function createHeaderContainer() {
+
+            const defaultButtonColor = '#DBA19D'; // Цвет кнопок по умолчанию
+            const defaultButtonColorHowered = '#9E7471';
+            const activeButtonColor = '#e26c5e'; // Цвет для активной кнопки
+            const activeButtonColorHowered = '#c45a4b'; // Цвет для активной кнопки
+            
+            let selectedButton;
+
+            function isButtonSelected(button) {
+                return (selectedButton === button);
+            }
+
+            function selectButton(button) {
+                if (isButtonSelected(button)) return;
+                resetButtonSelection();
+                selectedButton = button;
+                button.style.backgroundColor = activeButtonColorHowered;
+            }
+
+            function resetButtonSelection() {
+                hidenVideoNumber = 0;
+                randomizeButton.style.backgroundColor = defaultButtonColor;
+                scoreButton.style.backgroundColor = defaultButtonColor;
+                dateButton.style.backgroundColor = defaultButtonColor;
+            }
+
             const headerContainer = document.createElement('div');
             headerContainer.style.width = '100%';
             headerContainer.style.display = 'flex';
             headerContainer.style.flexDirection = 'column';
             headerContainer.style.alignItems = 'flex-start';
 
-            const imageCount = document.createElement('div');
             imageCount.textContent = `Number of images: ${results.length}`;
             imageCount.style.fontFamily = 'Verdana, sans-serif';
             imageCount.style.fontSize = '20px';
@@ -1573,7 +1604,7 @@ const SearchInputModule = (() => {
 
             const randomizeButton = document.createElement('button');
             randomizeButton.textContent = 'Randomize';
-            randomizeButton.style.backgroundColor = '#e26c5e';
+            randomizeButton.style.backgroundColor = defaultButtonColor;
             randomizeButton.style.color = 'white';
             randomizeButton.style.border = 'none';
             randomizeButton.style.padding = '5px 10px 3px 10px';
@@ -1582,18 +1613,128 @@ const SearchInputModule = (() => {
             randomizeButton.style.fontSize = '18px';
             randomizeButton.style.marginLeft = '20px';
             randomizeButton.onmouseover = () => {
-                randomizeButton.style.backgroundColor = '#c45a4b';
+                randomizeButton.style.backgroundColor = isButtonSelected(randomizeButton) ? activeButtonColorHowered : defaultButtonColorHowered;
             };
             randomizeButton.onmouseout = () => {
-                randomizeButton.style.backgroundColor = '#e26c5e';
+                randomizeButton.style.backgroundColor = isButtonSelected(randomizeButton) ? activeButtonColor : defaultButtonColor;
             };
             randomizeButton.onclick = () => {
-                const shuffledResults = results.sort(() => 0.5 - Math.random());
-                updateResults(shuffledResults, columnWidth);
+                if(isButtonSelected(scoreButton)) {
+                    hidenVideoNumber = 0;
+                    updateImageCounter();
+                }
+                selectButton(randomizeButton);
+                const shuffledResults = results.slice().sort(() => 0.5 - Math.random());
+                updateResults(shuffledResults);
             };
+
+            const scoreButton = document.createElement('button');
+            scoreButton.textContent = 'Score';
+            scoreButton.style.backgroundColor = defaultButtonColor; // Зелёный цвет для кнопки
+            scoreButton.style.color = 'white';
+            scoreButton.style.border = 'none';
+            scoreButton.style.padding = '5px 10px 3px 10px';
+            scoreButton.style.cursor = 'pointer';
+            scoreButton.style.borderRadius = '3px';
+            scoreButton.style.fontSize = '18px';
+            scoreButton.style.marginLeft = '20px';
+
+            scoreButton.onmouseover = () => {
+                scoreButton.style.backgroundColor = isButtonSelected(scoreButton) ? activeButtonColorHowered : defaultButtonColorHowered;
+            };
+
+            scoreButton.onmouseout = () => {
+                scoreButton.style.backgroundColor = isButtonSelected(scoreButton) ? activeButtonColor : defaultButtonColor;
+            };
+
+            let isNoVid = false;
+
+            scoreButton.onclick = () => {
+                if(isButtonSelected(scoreButton)) {
+                    if (isNoVid) {
+                        scoreButton.textContent = 'Score';
+                        isNoVid = false;
+                    } else {
+                        scoreButton.textContent = 'Score no video';
+                        isNoVid = true;
+                    }
+                }
+                else {
+                    selectButton(scoreButton);
+                }
+
+                let sortedResults;
+                if (isNoVid) {
+                    const numberWithVideos = results.length; 
+                    sortedResults = results.filter(result => !result.video);
+                    const numberWithOutVideos = sortedResults.length;
+                    sortedResults = sortedResults.sort((a, b) => b.score - a.score);
+                    hidenVideoNumber = numberWithVideos - numberWithOutVideos;
+                }
+                else {
+                    sortedResults = results.slice().sort((a, b) => b.score - a.score);
+                    hidenVideoNumber = 0;
+                }
+                updateImageCounter();
+                updateResults(sortedResults);
+            };
+
+            const dateButton = document.createElement('button');
+            dateButton.textContent = 'New'; // По умолчанию выводим новые
+            dateButton.style.backgroundColor = defaultButtonColor;
+            dateButton.style.color = 'white';
+            dateButton.style.border = 'none';
+            dateButton.style.padding = '5px 10px 3px 10px';
+            dateButton.style.cursor = 'pointer';
+            dateButton.style.borderRadius = '3px';
+            dateButton.style.fontSize = '18px';
+            dateButton.style.marginLeft = '20px';
+            dateButton.style.width = '56px';
+
+            dateButton.onmouseover = () => {
+                dateButton.style.backgroundColor = isButtonSelected(dateButton) ? activeButtonColorHowered : defaultButtonColorHowered;
+            };
+
+            dateButton.onmouseout = () => {
+                dateButton.style.backgroundColor = isButtonSelected(dateButton) ? activeButtonColor : defaultButtonColor;
+            };
+
+            let isNewOrder = true; // Флаг для отслеживания порядка сортировки
+
+            dateButton.onclick = () => {
+                if(isButtonSelected(scoreButton)) {
+                    hidenVideoNumber = 0;
+                    updateImageCounter();
+                }
+                if(isButtonSelected(dateButton)) {
+                    if (isNewOrder) {
+                        dateButton.textContent = 'Old';
+                        isNewOrder = false;
+                    } else {
+                        dateButton.textContent = 'New';
+                        isNewOrder = true;
+                    }
+                }
+                else {
+                    selectButton(dateButton);
+                }
+
+                if (isNewOrder) {
+                    updateResults(results.slice());
+                }
+                else {
+                    updateResults(results.slice().reverse());
+                }
+            };
+
 
             controlsContainer.appendChild(toggleRemoveLabelContainer);
             controlsContainer.appendChild(randomizeButton);
+            controlsContainer.appendChild(dateButton);
+            controlsContainer.appendChild(scoreButton);
+
+            selectButton(dateButton);
+
 
             function updateLayout() {
                 const screenWidth = window.innerWidth || document.documentElement.clientWidth;
@@ -1603,9 +1744,10 @@ const SearchInputModule = (() => {
                     headerContainer.style.justifyContent = 'space-between';
                     headerContainer.style.alignItems = 'center';
 
+                    imageCount.style.position = 'absolute';
                     imageCount.style.marginBottom = '0';
-                    imageCount.style.marginLeft = '285px';
-                    imageCount.style.transform = 'translateX(-50%)';
+                    imageCount.style.marginLeft = '650px';
+                    //imageCount.style.transform = 'translateX(-50%)';
 
                     controlsContainer.style.flexDirection = 'row';
                     controlsContainer.style.justifyContent = 'flex-start';
@@ -1620,6 +1762,7 @@ const SearchInputModule = (() => {
                     headerContainer.style.flexDirection = 'column';
                     headerContainer.style.alignItems = 'flex-start';
 
+                    imageCount.style.position = 'relative';
                     imageCount.style.marginBottom = '10px';
                     imageCount.style.transform = 'translateX(0%)';
                     imageCount.style.marginLeft = '0px';
@@ -1693,7 +1836,7 @@ const SearchInputModule = (() => {
 
         document.body.appendChild(resultContainer);
 
-        function updateResults(shuffledResults, columnWidth) {
+        function updateResults(shuffledResults) {
             resultContainer.querySelectorAll('.resultItem').forEach(item => item.remove());
 
             shuffledResults.forEach(result => {
@@ -1721,20 +1864,23 @@ const SearchInputModule = (() => {
             removeLabel.style.display = removeLabelsShown ? 'inline' : 'none';
             removeLabel.textContent = 'Remove';
         
-            // Обработчик удаления
+
             removeLabel.onclick = (event) => {
                 addToRemovalQueue(result.id);
-                event.preventDefault(); // Отменяем переход по ссылке
-                console.log("Removing...");
+                event.preventDefault();
                 fetch(`index.php?page=favorites&s=delete&id=${result.id}`, {
                     method: 'GET',
                 })
                 .then(response => {
                     if (response.ok) {
-                        console.log("Successfully removed");
                         const element = document.getElementById(`favorite-${result.id}`);
                         if (element) {
-                            element.remove(); // Удаляем элемент из DOM
+                            const indexToRemove = results.indexOf(result);
+                            if (indexToRemove > -1) {
+                                results.splice(indexToRemove, 1);
+                            }
+                            element.remove();
+                            updateImageCounter();
                         } else {
                             console.error(`Element with ID favorite-${result.id} not found`);
                         }
@@ -1756,10 +1902,9 @@ const SearchInputModule = (() => {
             resultItem.appendChild(removeLabel);
             resultContainer.appendChild(resultItem);
         }
-        
-
-
     }
+
+
     function init() {
         if (customIcon) {
             updateIcon('https://i.imgur.com/EtURK0r.png');
