@@ -1483,6 +1483,122 @@ const SearchInputModule = (() => {
 
         document.body.innerHTML = '';
 
+        const defaultPageSize = 50; // Значение по умолчанию
+
+        const savedImagesPerPage = localStorage.getItem('imagesPerPage') || defaultPageSize;
+        let imagesPerPage = savedImagesPerPage === 'All' ? actualFavCount : parseInt(savedImagesPerPage, 10);
+
+        // Задаём допустимые значения для выбора размера страницы
+        const pageSizes = [10, 15, 25, 50, 100, 250, 500, 1000, 'All'];
+
+
+        let currentPage = 1; // Текущая страница
+        let currentResults = results.slice();
+
+        // Функция для отображения страниц
+        function displayCurrentPage() {
+            showResults(currentResults);
+        }
+
+        function cropCurrentPage(resultsToCrop, page, pageSize) {
+            const startIndex = (page - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+
+            const paginatedResults = resultsToCrop.slice(startIndex, endIndex);
+            return paginatedResults;
+        }
+
+        // Создаём выпадающий список для выбора размера страницы
+        function createPageSizeSelector() {
+            const pageSizeContainer = document.createElement('div');
+            pageSizeContainer.style.marginLeft = '20px';
+            pageSizeContainer.style.display = 'flex';
+            pageSizeContainer.style.alignItems = 'center';
+
+            const pageSizeLabel = document.createElement('label');
+            pageSizeLabel.textContent = 'Page size:';
+            pageSizeLabel.style.marginRight = '10px';
+            pageSizeLabel.style.fontFamily = 'Verdana, sans-serif';
+            pageSizeLabel.style.fontSize = '16px';
+            pageSizeLabel.style.color = textColor;
+
+            const pageSizeSelect = document.createElement('select');
+            pageSizeSelect.style.padding = '5px';
+            pageSizeSelect.style.fontSize = '16px';
+
+            pageSizes.forEach(size => {
+                const option = document.createElement('option');
+                option.value = size; // Для "All" используем всю длину массива
+                console.log(option.value);
+                option.textContent = size;
+                pageSizeSelect.appendChild(option);
+            });
+
+            pageSizeSelect.value = savedImagesPerPage; // Устанавливаем текущее значение
+
+            // Обработчик изменения размера страницы
+            pageSizeSelect.addEventListener('change', () => {
+                const size = pageSizeSelect.value;
+                imagesPerPage = size === 'All'? actualFavCount : parseInt(size, 10); // Новое количество элементов на странице
+                localStorage.setItem('imagesPerPage', size);
+                currentPage = 1; // Возвращаемся на первую страницу
+                displayCurrentPage();
+            });
+
+            pageSizeContainer.appendChild(pageSizeLabel);
+            pageSizeContainer.appendChild(pageSizeSelect);
+
+            return pageSizeContainer;
+        }
+
+        // Обновляем контейнер с результатами при изменении страницы
+        function createPaginationControls() {
+            const paginationContainer = document.createElement('div');
+            paginationContainer.style.marginTop = '10px';
+            paginationContainer.style.display = 'flex';
+            paginationContainer.style.justifyContent = 'center';
+
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '<';
+            prevButton.style.marginRight = '10px';
+            prevButton.style.padding = '5px 10px';
+            prevButton.style.cursor = 'pointer';
+            prevButton.disabled = currentPage === 1;
+
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayCurrentPage();
+                }
+            });
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '>';
+            nextButton.style.marginLeft = '10px';
+            nextButton.style.padding = '5px 10px';
+            nextButton.style.cursor = 'pointer';
+            nextButton.disabled = currentPage * imagesPerPage >= results.length;
+
+            nextButton.addEventListener('click', () => {
+                if (currentPage * imagesPerPage < results.length) {
+                    currentPage++;
+                    displayCurrentPage();
+                }
+            });
+
+            paginationContainer.appendChild(prevButton);
+            paginationContainer.appendChild(nextButton);
+
+            return { paginationContainer, prevButton, nextButton };
+        }
+
+        // Обновляем кнопки пагинации
+        function updatePaginationButtons(prevButton, nextButton) {
+            prevButton.disabled = currentPage === 1;
+            nextButton.disabled = currentPage * imagesPerPage >= results.length;
+        }
+
+
         localStorage.setItem('inputTags', JSON.stringify(inputTags));
         localStorage.setItem('prevFavCount', JSON.stringify(actualFavCount));
         localStorage.setItem('prevId', JSON.stringify(userId));
@@ -1625,7 +1741,7 @@ const SearchInputModule = (() => {
                 }
                 selectButton(randomizeButton);
                 const shuffledResults = results.slice().sort(() => 0.5 - Math.random());
-                updateResults(shuffledResults);
+                updateCurrentResults(shuffledResults);
             };
 
             const scoreButton = document.createElement('button');
@@ -1638,6 +1754,7 @@ const SearchInputModule = (() => {
             scoreButton.style.borderRadius = '3px';
             scoreButton.style.fontSize = '18px';
             scoreButton.style.marginLeft = '20px';
+            scoreButton.style.marginRight = '400px';
 
             scoreButton.onmouseover = () => {
                 scoreButton.style.backgroundColor = isButtonSelected(scoreButton) ? activeButtonColorHowered : defaultButtonColorHowered;
@@ -1672,11 +1789,12 @@ const SearchInputModule = (() => {
                     hidenVideoNumber = numberWithVideos - numberWithOutVideos;
                 }
                 else {
+                    console.log(results);
                     sortedResults = results.slice().sort((a, b) => b.score - a.score);
                     hidenVideoNumber = 0;
                 }
                 updateImageCounter();
-                updateResults(sortedResults);
+                updateCurrentResults(sortedResults);
             };
 
             const dateButton = document.createElement('button');
@@ -1720,18 +1838,34 @@ const SearchInputModule = (() => {
                 }
 
                 if (isNewOrder) {
-                    updateResults(results.slice());
+                    updateCurrentResults(results.slice());
                 }
                 else {
-                    updateResults(results.slice().reverse());
+                    updateCurrentResults(results.slice().reverse());
                 }
             };
+
+
+            const pageSizeSelector = createPageSizeSelector();
+            const imageCountContainer = document.createElement('div');
+            imageCountContainer.appendChild(imageCount);
+        
+            const { paginationContainer, prevButton, nextButton } = createPaginationControls();
 
 
             controlsContainer.appendChild(toggleRemoveLabelContainer);
             controlsContainer.appendChild(randomizeButton);
             controlsContainer.appendChild(dateButton);
             controlsContainer.appendChild(scoreButton);
+
+            controlsContainer.appendChild(imageCountContainer);
+            controlsContainer.appendChild(pageSizeSelector);
+            controlsContainer.appendChild(paginationContainer);
+            // При обновлении страницы обновляем кнопки
+            setInterval(() => {
+                updatePaginationButtons(prevButton, nextButton);
+            }, 100);
+
 
             selectButton(dateButton);
 
@@ -1794,9 +1928,7 @@ const SearchInputModule = (() => {
         spacer.style.height = '20px';
         resultContainer.appendChild(spacer);
 
-        results.forEach(result => {
-            appendResult(result);
-        });
+        displayCurrentPage();
 
         const backButton = document.createElement('button');
         backButton.textContent = 'Back';
@@ -1837,18 +1969,26 @@ const SearchInputModule = (() => {
 
         document.body.appendChild(resultContainer);
 
-        function updateResults(shuffledResults) {
+        function updateCurrentResults(shuffledResults) {
+            currentPage = 1;
+            currentResults = shuffledResults;
+            showResults(shuffledResults);
+        }
+
+        function showResults(shuffledResults) {
             resultContainer.querySelectorAll('.resultItem').forEach(item => item.remove());
 
-            shuffledResults.forEach(result => {
+            const pageResults = cropCurrentPage(shuffledResults, currentPage, imagesPerPage);
+            pageResults.forEach(result => {
                 appendResult(result);
             });
         }
 
         function appendResult(result) {
+            if (!result) return;
             const resultItem = document.createElement('div');
             resultItem.className = 'resultItem';
-            resultItem.id = `favorite-${result.id}`; // Уникальный ID для элемента
+            resultItem.id = `favorite-${result.id}`;
             resultItem.style.textAlign = 'center';
             resultItem.style.width = `${columnWidth}px`;
             resultItem.style.margin = '10px';
@@ -1877,8 +2017,13 @@ const SearchInputModule = (() => {
                         const element = document.getElementById(`favorite-${result.id}`);
                         if (element) {
                             const indexToRemove = results.indexOf(result);
+                            const indexToRemoveCurrent = currentResults.indexOf(result);
                             if (indexToRemove > -1) {
                                 results.splice(indexToRemove, 1);
+                            }
+                            if (indexToRemoveCurrent > -1) {
+                                //currentResults.splice(indexToRemoveCurrent, 1);
+                                currentResults[indexToRemoveCurrent] = null;
                             }
                             element.remove();
                             updateImageCounter();
