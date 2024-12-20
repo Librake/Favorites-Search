@@ -1496,8 +1496,9 @@ const SearchInputModule = (() => {
         let currentResults = results.slice();
 
         // Функция для отображения страниц
-        function displayCurrentPage() {
+        function displayCurretnpage() {
             showResults(currentResults);
+            scrollToTop();
         }
 
         function cropCurrentPage(resultsToCrop, page, pageSize) {
@@ -1509,7 +1510,7 @@ const SearchInputModule = (() => {
         }
 
         // Создаём выпадающий список для выбора размера страницы
-        function createPageSizeSelector() {
+        function createPageSizeSelector(updatePageIndicator) {
             const pageSizeContainer = document.createElement('div');
             pageSizeContainer.style.marginLeft = '20px';
             pageSizeContainer.style.display = 'flex';
@@ -1525,11 +1526,12 @@ const SearchInputModule = (() => {
             const pageSizeSelect = document.createElement('select');
             pageSizeSelect.style.padding = '5px';
             pageSizeSelect.style.fontSize = '16px';
+            pageSizeSelect.style.marginRight = '30px';
+
 
             pageSizes.forEach(size => {
                 const option = document.createElement('option');
                 option.value = size; // Для "All" используем всю длину массива
-                console.log(option.value);
                 option.textContent = size;
                 pageSizeSelect.appendChild(option);
             });
@@ -1542,7 +1544,8 @@ const SearchInputModule = (() => {
                 imagesPerPage = size === 'All'? actualFavCount : parseInt(size, 10); // Новое количество элементов на странице
                 localStorage.setItem('imagesPerPage', size);
                 currentPage = 1; // Возвращаемся на первую страницу
-                displayCurrentPage();
+                displayCurretnpage();
+                updatePageIndicator(); // Обновляем индикатор номера страницы
             });
 
             pageSizeContainer.appendChild(pageSizeLabel);
@@ -1552,45 +1555,71 @@ const SearchInputModule = (() => {
         }
 
         // Обновляем контейнер с результатами при изменении страницы
-        function createPaginationControls() {
+        function createPaginationControls(onPageChange) {
             const paginationContainer = document.createElement('div');
-            paginationContainer.style.marginTop = '10px';
             paginationContainer.style.display = 'flex';
             paginationContainer.style.justifyContent = 'center';
-
+            paginationContainer.style.alignItems = 'center';
+            paginationContainer.style.margin = '10px 0';
+            paginationContainer.style.marginRight = '30px';
+        
             const prevButton = document.createElement('button');
             prevButton.textContent = '<';
             prevButton.style.marginRight = '10px';
             prevButton.style.padding = '5px 10px';
             prevButton.style.cursor = 'pointer';
             prevButton.disabled = currentPage === 1;
-
+        
             prevButton.addEventListener('click', () => {
                 if (currentPage > 1) {
                     currentPage--;
-                    displayCurrentPage();
+                    onPageChange();
+                    prevButton.blur(); // Снимаем фокус
+                    displayCurretnpage();
                 }
             });
-
+        
+            // Элемент для отображения номера текущей страницы
+            const pageIndicator = document.createElement('span');
+            pageIndicator.style.margin = '0 10px';
+            pageIndicator.style.fontSize = '16px';
+            pageIndicator.style.fontFamily = 'Verdana, sans-serif';
+            pageIndicator.style.color = '#333';
+        
+            function updatePageIndicator() {
+                const totalPages = Math.ceil(currentResults.length / imagesPerPage);
+                pageIndicator.textContent = `${currentPage}/${totalPages}`;
+                prevButton.disabled = currentPage === 1;
+                nextButton.disabled = currentPage >= totalPages;
+            }
+        
             const nextButton = document.createElement('button');
             nextButton.textContent = '>';
             nextButton.style.marginLeft = '10px';
             nextButton.style.padding = '5px 10px';
             nextButton.style.cursor = 'pointer';
-            nextButton.disabled = currentPage * imagesPerPage >= results.length;
-
+        
             nextButton.addEventListener('click', () => {
-                if (currentPage * imagesPerPage < results.length) {
+                const totalPages = Math.ceil(currentResults.length / imagesPerPage);
+                if (currentPage < totalPages) {
                     currentPage++;
-                    displayCurrentPage();
+                    onPageChange();
+                    nextButton.blur(); // Снимаем фокус
+                    displayCurretnpage();
                 }
             });
-
+        
+            // Добавляем элементы в контейнер
             paginationContainer.appendChild(prevButton);
+            paginationContainer.appendChild(pageIndicator);
             paginationContainer.appendChild(nextButton);
-
-            return { paginationContainer, prevButton, nextButton };
+        
+            // Инициализируем индикатор страницы
+            updatePageIndicator();
+        
+            return { paginationContainer, prevButton, nextButton, updatePageIndicator };
         }
+        
 
         // Обновляем кнопки пагинации
         function updatePaginationButtons(prevButton, nextButton) {
@@ -1633,30 +1662,56 @@ const SearchInputModule = (() => {
         resultContainer.style.padding = '20px';
         resultContainer.style.boxSizing = 'border-box';
         resultContainer.style.display = 'flex';
-        resultContainer.style.flexWrap = 'wrap';
-        resultContainer.style.justifyContent = 'flex-start';
-        resultContainer.style.alignContent = 'flex-start';
-        resultContainer.style.alignItems = 'flex-start';
+        resultContainer.style.flexDirection = 'column';
+
+
+        // Создаём imagesContainer для картинок
+
+        const imagesContainer = document.createElement('div');
+        imagesContainer.id = 'imagesContainer';
+        imagesContainer.style.width = '100%';
+        imagesContainer.style.marginTop = '10px';
+        imagesContainer.style.display = 'flex';
+        imagesContainer.style.flexWrap = 'wrap';
+        imagesContainer.style.justifyContent = 'flex-start';
+        imagesContainer.style.alignContent = 'flex-start';
+        imagesContainer.style.alignItems = 'flex-start';
+        //imagesContainer.style.minHeight = '600px';
+        
+
+        function scrollToTop() {
+            resultContainer.scrollTop = 0;
+        }
+
+
 
         const imageCount = document.createElement('div');
         let hidenVideoNumber = 0;
         function updateImageCounter() {
-            imageCount.textContent = `Number of images: ${results.length - hidenVideoNumber}`;
+            imageCount.textContent = `Images: ${results.length - hidenVideoNumber}`;
         }
 
+        const bottomControls = createPaginationControls(updatePageControls);
+        const { paginationContainer, prevButton, nextButton, updatePageIndicator } = createPaginationControls(updatePageControls);
+        function updatePageControls() {
+            updatePageIndicator();
+            bottomControls.updatePageIndicator();
+        }
+        
 
         function createHeaderContainer() {
+
+            
 
             const defaultButtonColor = '#DBA19D'; // Цвет кнопок по умолчанию
             const defaultButtonColorHowered = '#9E7471';
             const activeButtonColor = '#e26c5e'; // Цвет для активной кнопки
             const activeButtonColorHowered = '#c45a4b'; // Цвет для активной кнопки
             
-            let selectedButton;
-
+            let selectedButton;  
             function isButtonSelected(button) {
                 return (selectedButton === button);
-            }
+            }   
 
             function selectButton(button) {
                 if (isButtonSelected(button)) return;
@@ -1678,7 +1733,7 @@ const SearchInputModule = (() => {
             headerContainer.style.flexDirection = 'column';
             headerContainer.style.alignItems = 'flex-start';
 
-            imageCount.textContent = `Number of images: ${results.length}`;
+            imageCount.textContent = `Images: ${results.length}`;
             imageCount.style.fontFamily = 'Verdana, sans-serif';
             imageCount.style.fontSize = '20px';
             imageCount.style.fontWeight = 'bold';
@@ -1709,7 +1764,7 @@ const SearchInputModule = (() => {
 
             const toggleRemoveLabelText = document.createElement('label');
             toggleRemoveLabelText.htmlFor = 'toggleRemoveLabelCheckbox';
-            toggleRemoveLabelText.textContent = 'Show Remove Labels';
+            toggleRemoveLabelText.textContent = 'Removing';
             toggleRemoveLabelText.style.color = textColor;
             toggleRemoveLabelText.style.fontFamily = 'Verdana, sans-serif';
             toggleRemoveLabelText.style.fontSize = '16px';
@@ -1742,6 +1797,7 @@ const SearchInputModule = (() => {
                 selectButton(randomizeButton);
                 const shuffledResults = results.slice().sort(() => 0.5 - Math.random());
                 updateCurrentResults(shuffledResults);
+                updatePageControls();
             };
 
             const scoreButton = document.createElement('button');
@@ -1755,6 +1811,8 @@ const SearchInputModule = (() => {
             scoreButton.style.fontSize = '18px';
             scoreButton.style.marginLeft = '20px';
             scoreButton.style.marginRight = '400px';
+            scoreButton.style.flexShrink = '0'; // Запрещаем кнопке сжиматься
+
 
             scoreButton.onmouseover = () => {
                 scoreButton.style.backgroundColor = isButtonSelected(scoreButton) ? activeButtonColorHowered : defaultButtonColorHowered;
@@ -1789,12 +1847,12 @@ const SearchInputModule = (() => {
                     hidenVideoNumber = numberWithVideos - numberWithOutVideos;
                 }
                 else {
-                    console.log(results);
                     sortedResults = results.slice().sort((a, b) => b.score - a.score);
                     hidenVideoNumber = 0;
                 }
                 updateImageCounter();
                 updateCurrentResults(sortedResults);
+                updatePageControls();
             };
 
             const dateButton = document.createElement('button');
@@ -1843,14 +1901,24 @@ const SearchInputModule = (() => {
                 else {
                     updateCurrentResults(results.slice().reverse());
                 }
+                updatePageControls();
             };
 
 
-            const pageSizeSelector = createPageSizeSelector();
             const imageCountContainer = document.createElement('div');
             imageCountContainer.appendChild(imageCount);
         
-            const { paginationContainer, prevButton, nextButton } = createPaginationControls();
+            const pageSizeSelector = createPageSizeSelector(updatePageControls);
+
+            const topPageControls = document.createElement('div');
+            topPageControls.style.display = 'flex';
+            topPageControls.style.alignItems = 'center';
+            topPageControls.style.position = 'absolute';
+            topPageControls.style.marginLeft = '850px';
+
+            topPageControls.appendChild(paginationContainer);
+            topPageControls.appendChild(pageSizeSelector);
+
 
 
             controlsContainer.appendChild(toggleRemoveLabelContainer);
@@ -1859,8 +1927,8 @@ const SearchInputModule = (() => {
             controlsContainer.appendChild(scoreButton);
 
             controlsContainer.appendChild(imageCountContainer);
-            controlsContainer.appendChild(pageSizeSelector);
-            controlsContainer.appendChild(paginationContainer);
+            controlsContainer.appendChild(topPageControls);
+            
             // При обновлении страницы обновляем кнопки
             setInterval(() => {
                 updatePaginationButtons(prevButton, nextButton);
@@ -1881,13 +1949,13 @@ const SearchInputModule = (() => {
 
                     imageCount.style.position = 'absolute';
                     imageCount.style.marginBottom = '0';
-                    imageCount.style.marginLeft = '650px';
+                    imageCount.style.marginLeft = '600px';
                     imageCount.style.top = 'auto'; 
 
                     controlsContainer.style.flexDirection = 'row';
                     controlsContainer.style.justifyContent = 'flex-start';
                     controlsContainer.appendChild(imageCount);
-                    toggleRemoveLabelText.textContent = 'Show Remove Labels';
+                    toggleRemoveLabelText.textContent = 'Removing';
                     toggleRemoveLabelContainer.style.marginLeft = '10px';
 
                     headerContainer.appendChild(controlsContainer);
@@ -1928,7 +1996,9 @@ const SearchInputModule = (() => {
         spacer.style.height = '20px';
         resultContainer.appendChild(spacer);
 
-        displayCurrentPage();
+        resultContainer.appendChild(imagesContainer);
+
+        displayCurretnpage();
 
         const backButton = document.createElement('button');
         backButton.textContent = 'Back';
@@ -1967,6 +2037,7 @@ const SearchInputModule = (() => {
         document.body.style.height = '100vh';
         document.body.style.overflow = 'hidden';
 
+        resultContainer.appendChild(bottomControls.paginationContainer);
         document.body.appendChild(resultContainer);
 
         function updateCurrentResults(shuffledResults) {
@@ -1976,7 +2047,7 @@ const SearchInputModule = (() => {
         }
 
         function showResults(shuffledResults) {
-            resultContainer.querySelectorAll('.resultItem').forEach(item => item.remove());
+            imagesContainer.querySelectorAll('.resultItem').forEach(item => item.remove());
 
             const pageResults = cropCurrentPage(shuffledResults, currentPage, imagesPerPage);
             pageResults.forEach(result => {
@@ -1993,6 +2064,10 @@ const SearchInputModule = (() => {
             resultItem.style.width = `${columnWidth}px`;
             resultItem.style.margin = '10px';
             resultItem.style.alignSelf = 'flex-start';
+
+            resultItem.style.height = '250px';
+            resultItem.style.position = 'relative';
+            resultItem.style.transition = 'height 0.15s'
         
             const removeLabel = document.createElement('a');
             removeLabel.href = '#';
@@ -2004,7 +2079,11 @@ const SearchInputModule = (() => {
             removeLabel.style.fontSize = '100%';
             removeLabel.style.display = removeLabelsShown ? 'inline' : 'none';
             removeLabel.textContent = 'Remove';
-        
+
+            // Обновляем высоту resultItem в зависимости от состояния кнопки
+            function updateResultItemHeight() {
+                resultItem.style.height = removeLabel.style.display === 'inline' ? '275px' : '250px'; // Высота с кнопкой
+            }
 
             removeLabel.onclick = (event) => {
                 addToRemovalQueue(result.id);
@@ -2041,12 +2120,20 @@ const SearchInputModule = (() => {
         
             resultItem.innerHTML = `
                 <a href="index.php?page=post&s=view&id=${result.id}" id="p${result.id}" target="_blank">
-                    <img src="${result.src}" title="" border="0" alt="" style="max-width: 100%; max-height: 100%; ${borderStyle}">
+                    <img src="${result.src}" title="" border="0" alt="" style="max-width: 100%; max-height: 100%; ${borderStyle}; margin-bottom: 5px;">
                 </a><br>
             `;
-        
+
             resultItem.appendChild(removeLabel);
-            resultContainer.appendChild(resultItem);
+            imagesContainer.appendChild(resultItem);
+
+
+            // Следим за состоянием отображения кнопки и обновляем высоту
+            const observer = new MutationObserver(() => updateResultItemHeight());
+            observer.observe(removeLabel, { attributes: true, attributeFilter: ['style'] });
+
+            // Инициализируем высоту
+            updateResultItemHeight();
         }
     }
 
