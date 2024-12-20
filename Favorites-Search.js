@@ -81,7 +81,7 @@
     let prevFavCount;
     let loadedTags = [];
     let appendLoadedSave = false;
-    let prevId;
+    let prevUserId;
     let lastImageId;
     let textColor;
     let darkMode = false;
@@ -171,8 +171,8 @@
         const savedPrevFavCount = localStorage.getItem('prevFavCount');
         prevFavCount = (savedPrevFavCount && savedPrevFavCount != 'undefined') ? JSON.parse(savedPrevFavCount) : 0;
 
-        const savedPrevId = localStorage.getItem('prevId');
-        prevId = (savedPrevId && savedPrevId != 'undefined') ? JSON.parse(savedPrevId) : 0;
+        const savedPrevId = localStorage.getItem('userId');
+        prevUserId = (savedPrevId && savedPrevId != 'undefined') ? JSON.parse(savedPrevId) : 0;
     }
 
     function reset() {
@@ -339,89 +339,93 @@
         }
     }
 
+    function displayScanStatus(text) {
+        document.getElementById('progress').textContent = text;
+    }
 
-const SearchInputModule = (() => {
-    let currentFocus;
-    let searchInput = document.getElementById('searchTagInput');
-    let autocompleteOpen = false;
-    let searchButton;
-    function handleSearchBar(event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            searchButton.click();
+
+    const SearchInputModule = (() => {
+        let currentFocus;
+        let searchInput = document.getElementById('searchTagInput');
+        let autocompleteOpen = false;
+        let searchButton;
+        function handleSearchBar(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchButton.click();
+            }
         }
-    }
-    function createAutocomplete() {
-        const autocomplete = document.createElement('div');
-        autocomplete.id = 'autocomplete-list';
-        autocomplete.className = 'autocomplete-items';
-        autocomplete.style.position = 'absolute';
-        autocomplete.style.zIndex = '9999';
-        autocomplete.style.backgroundColor = darkMode ? "rgb(48, 48, 48)" : 'white';
-        autocomplete.style.color = 'black';
-        autocomplete.style.border = '1px solid #ccc';
-        autocomplete.style.padding = '5px';
+        function createAutocomplete() {
+            const autocomplete = document.createElement('div');
+            autocomplete.id = 'autocomplete-list';
+            autocomplete.className = 'autocomplete-items';
+            autocomplete.style.position = 'absolute';
+            autocomplete.style.zIndex = '9999';
+            autocomplete.style.backgroundColor = darkMode ? "rgb(48, 48, 48)" : 'white';
+            autocomplete.style.color = 'black';
+            autocomplete.style.border = '1px solid #ccc';
+            autocomplete.style.padding = '5px';
 
-        return autocomplete;
-    }
-    function handleAutoComplete(event) {
-            let value = this.value;
-            if (!value || value.length === 0) {
-                closeAllLists();
-                return false;
-            }
-
-            value = value.trim().split(' ').pop();
-            let hasMinus = false;
-            // If value has - at the beginning, remove it
-
-            if (value[0] === '-') {
-                hasMinus = true;
-                value = value.substr(1);
-            }
-
-            closeAllLists();
-            currentFocus = -1;
-
-            fetch(`https://ac.rule34.xxx/autocomplete.php?q=${value}`)
-                .then(response => response.json())
-                .then(data => {
+            return autocomplete;
+        }
+        function handleAutoComplete(event) {
+                let value = this.value;
+                if (!value || value.length === 0) {
                     closeAllLists();
-                    autocompleteOpen = true;
-                    const autocomplete = createAutocomplete();
-                   
-                    this.parentNode.appendChild(autocomplete);
-                    if (data.length === 0) {
-                        autocomplete.remove();
-                        return false;
-                    }
-                    data.forEach(item => {
-                        const option = document.createElement('div');
-                        option.classList.add(`tag-type-${item.type}`);
-                        option.innerHTML = `<strong>${item.label.substr(0, value.length)}</strong>${item.label.substr(value.length)}`;
-                        option.innerHTML += `<input type="hidden" value="${item.value}">`;
-                        option.addEventListener('click', function(e) {
-                            const optionValue = hasMinus ? `-${this.getElementsByTagName('input')[0].value}` : this.getElementsByTagName('input')[0].value;
-                            const tags = searchInput.value.split(' ');
-                            tags.pop();
-                            tags.push(optionValue);
-                            tags.push('');
-                            searchInput.value = tags.join(' ');
-                            closeAllLists();
+                    return false;
+                }
+
+                value = value.trim().split(' ').pop();
+                let hasMinus = false;
+                // If value has - at the beginning, remove it
+
+                if (value[0] === '-') {
+                    hasMinus = true;
+                    value = value.substr(1);
+                }
+
+                closeAllLists();
+                currentFocus = -1;
+
+                fetch(`https://ac.rule34.xxx/autocomplete.php?q=${value}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        closeAllLists();
+                        autocompleteOpen = true;
+                        const autocomplete = createAutocomplete();
+                    
+                        this.parentNode.appendChild(autocomplete);
+                        if (data.length === 0) {
+                            autocomplete.remove();
+                            return false;
+                        }
+                        data.forEach(item => {
+                            const option = document.createElement('div');
+                            option.classList.add(`tag-type-${item.type}`);
+                            option.innerHTML = `<strong>${item.label.substr(0, value.length)}</strong>${item.label.substr(value.length)}`;
+                            option.innerHTML += `<input type="hidden" value="${item.value}">`;
+                            option.addEventListener('click', function(e) {
+                                const optionValue = hasMinus ? `-${this.getElementsByTagName('input')[0].value}` : this.getElementsByTagName('input')[0].value;
+                                const tags = searchInput.value.split(' ');
+                                tags.pop();
+                                tags.push(optionValue);
+                                tags.push('');
+                                searchInput.value = tags.join(' ');
+                                closeAllLists();
+                            });
+                            option.addEventListener('mouseover', function() {
+                                const items = autocomplete.getElementsByTagName('div');
+                                for (let i = 0; i < items.length; i++) {
+                                    items[i].style.backgroundColor = '';
+                                }
+                                this.style.backgroundColor = 'rgb(170, 229, 164)';
+                                if (darkMode) this.style.textShadow = "1px 1px 1px #000,-1px -1px 1px #000,1px -1px 1px #000,-1px 1px 1px #000";
+                                currentFocus = Array.prototype.indexOf.call(items, this);
+                                autocompleteOpen = true;
+                            });
+                            autocomplete.appendChild(option);
                         });
-                        option.addEventListener('mouseover', function() {
-                            const items = autocomplete.getElementsByTagName('div');
-                            for (let i = 0; i < items.length; i++) {
-                                items[i].style.backgroundColor = '';
-                            }
-                            this.style.backgroundColor = 'rgb(170, 229, 164)';
-                            if (darkMode) this.style.textShadow = "1px 1px 1px #000,-1px -1px 1px #000,1px -1px 1px #000,-1px 1px 1px #000";
-                            currentFocus = Array.prototype.indexOf.call(items, this);
-                            autocompleteOpen = true;
-                        });
-                        autocomplete.appendChild(option);
                     });
-                });
         }
         function handleAutocompleteSelection(event) {
 
@@ -1452,7 +1456,7 @@ const SearchInputModule = (() => {
                 loadedPages++;
             }
 
-            document.getElementById('progress').textContent = `scanning: ${loadedPages} / ${totalPages}`;
+            displayScanStatus(`scanning: ${loadedPages} / ${totalPages}`);
             activeRequests--;
         }
 
@@ -1630,7 +1634,7 @@ const SearchInputModule = (() => {
 
         localStorage.setItem('inputTags', JSON.stringify(inputTags));
         localStorage.setItem('prevFavCount', JSON.stringify(actualFavCount));
-        localStorage.setItem('prevId', JSON.stringify(userId));
+        localStorage.setItem('userId', JSON.stringify(userId));
         if (needScan) {
             try {
             saveAllImagesToLocalStorage();
@@ -2137,6 +2141,7 @@ const SearchInputModule = (() => {
         }
     }
 
+    
 
     function init() {
         if (customIcon) {
@@ -2191,28 +2196,39 @@ const SearchInputModule = (() => {
                     return true;
                 });
 
+                needScan = true;
+                fullScan = true;
+                if (prevUserId) {
+                    if (userId == prevUserId) {
+                        if (prevFavCount > 0 && loadedImages.length > 0) {
+                            fullScan = false;
+                            const loadedFirstId = loadedImages[0].id;
 
-                if (prevFavCount > 0 && loadedImages.length > 0) {
-                    let loadedFirstId = loadedImages[0].link.split('id=')[1];
-
-                    fetchFavoritesPage(0).then(pageDoc => {
-                        let actualFirstId = pageDoc.querySelectorAll('.thumb img')[0].parentElement.href.split('id=')[1];
-                        if ((loadedFirstId != actualFirstId) && !fromBack || (userId != prevId) || (favoritesCount != prevFavCount)) {
-                            needScan = true;
-                        }
-                        if (!needScan) {
-                            allImages = loadedImages;
-                            document.getElementById('progress').textContent = 'scanned';
+                            fetchFavoritesPage(0).then(pageDoc => {
+                                const actualFirstId = pageDoc.querySelectorAll('.thumb img')[0].parentElement.href.split('id=')[1];
+                                const loadedCount = loadedImages.length;
+                                console.log(loadedCount);
+                                if ((loadedFirstId != actualFirstId) && !fromBack || (favoritesCount != prevFavCount)) {
+                                    displayScanStatus('scanned (new)');
+                                }
+                                else {
+                                    needScan = false;
+                                    allImages = loadedImages;
+                                    displayScanStatus('scanned');
+                                }
+                            });
                         }
                         else {
-                            document.getElementById('progress').textContent = 'scanned (new)';
+                            displayScanStatus('need scan');
                         }
-                    });
+                    }
+                    else {
+                        displayScanStatus('new user');
+                    }
                 }
                 else {
-                    needScan = true;
+                    displayScanStatus('need scan');
                 }
-
             });
         });
 
