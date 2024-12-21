@@ -171,8 +171,12 @@
         const savedPrevFavCount = localStorage.getItem('prevFavCount');
         prevFavCount = (savedPrevFavCount && savedPrevFavCount != 'undefined') ? JSON.parse(savedPrevFavCount) : 0;
 
+        prevUserId = loadSavedUserId();
+    }
+
+    function loadSavedUserId() {
         const savedPrevId = localStorage.getItem('userId');
-        prevUserId = (savedPrevId && savedPrevId != 'undefined') ? JSON.parse(savedPrevId) : 0;
+        return (savedPrevId && savedPrevId != 'undefined') ? JSON.parse(savedPrevId) : 0;
     }
 
     function reset() {
@@ -2141,7 +2145,35 @@
         }
     }
 
-    
+    let favCountOnLastUpdate;
+
+    async function fastCheckForScanIsNeeded() {
+        const sameUser = getIdFromUrl() == loadSavedUserId();
+
+        if (!sameUser) {
+            const scanStatus = document.getElementById('progress').textContent;
+            return !(scanStatus == 'new user');
+        }
+        else {
+            return getFavoritesCount(userId).then(favCount => {
+                const haveNewFavs = favCount != favCountOnLastUpdate;
+                if (haveNewFavs) {
+                    favCountOnLastUpdate = favCount;
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            });
+
+        }
+    }
+
+    function switchedToFavPage() {
+        fastCheckForScanIsNeeded().then(checkResult => {
+            if (checkResult) location.reload();
+        });
+    }
 
     function init() {
         if (customIcon) {
@@ -2177,10 +2209,15 @@
             },
             true
         );
-        
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                switchedToFavPage();
+            }
+        });
         
         getFavoritesCount(userId).then(favoritesCount => {
             actualFavCount = favoritesCount;
+            favCountOnLastUpdate = favoritesCount;
 
             loadAllImagesFromLocalStorage(function(loadedImgs) {
                 const removalQueue = getRemovalQueue();
@@ -2207,7 +2244,6 @@
                             fetchFavoritesPage(0).then(pageDoc => {
                                 const actualFirstId = pageDoc.querySelectorAll('.thumb img')[0].parentElement.href.split('id=')[1];
                                 const loadedCount = loadedImages.length;
-                                console.log(loadedCount);
                                 if ((loadedFirstId != actualFirstId) && !fromBack || (favoritesCount != prevFavCount)) {
                                     displayScanStatus('scanned (new)');
                                 }
@@ -2241,7 +2277,7 @@
         function onPostPage() {
         const originalAddFav = window.addFav;
             window.addFav = function(postId) {
-                console.log(`Пост с ID ${postId} добавлен в избранное`);
+                console.log(`Image with ID ${postId} added to favorites`);
                 addToAdditionalQueue(postId);
                 originalAddFav.apply(this, arguments);
             };
