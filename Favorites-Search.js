@@ -2275,19 +2275,13 @@
         const BORDER_THICKNESS = 3;
 
         function onPostPage() {
-        const originalAddFav = window.addFav;
+            const originalAddFav = window.addFav;
+
             window.addFav = function(postId) {
                 console.log(`Image with ID ${postId} added to favorites`);
                 addToAdditionalQueue(postId);
                 originalAddFav.apply(this, arguments);
             };
-
-            document.addEventListener('click', function(e) {
-                const target = e.target.closest('a');
-                if (target && target.getAttribute('onclick') && target.getAttribute('onclick').includes('addFav')) {
-                }
-            }, true);
-
         }
 
         function handleUserReturn() {
@@ -2330,15 +2324,6 @@
                         handleUserReturn();
                     }
                 });
-
-                // Отслеживание первой загрузки и возврата из кэша
-                window.addEventListener('pageshow', (event) => {
-                    if (event.persisted) {
-                        //handleUserReturn();
-                    }
-                });
-                
-
 
                 loadAllImagesFromLocalStorage(function(loadedImgs) {
 
