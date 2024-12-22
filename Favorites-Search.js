@@ -392,40 +392,6 @@
             autocomplete.style.border = '1px solid #ccc';
             autocomplete.style.padding = '5px';
 
-            if (darkMode) {
-                const style = document.createElement('style');
-                style.textContent = `
-                    .tag-type-artist > a, 
-                    a.tag-type-artist, 
-                    .tag-type-artist > a:hover, 
-                    a.tag-type-artist:hover, 
-                    .tag-type-artist {
-                        color: var(--c-link-artist) !important;
-                    }
-                    .tag-type-copyright > a, 
-                    a.tag-type-copyright, 
-                    .tag-type-copyright > a:hover, 
-                    a.tag-type-copyright:hover, 
-                    .tag-type-copyright {
-                        color: var(--c-link-copyright) !important;
-                    }
-                    .tag-type-character > a, 
-                    a.tag-type-character, 
-                    .tag-type-character > a:hover, 
-                    a.tag-type-character:hover, 
-                    .tag-type-character {
-                        color: var(--c-link-character) !important;
-                    }
-                    .tag-type-metadata > a, 
-                    a.tag-type-metadata, 
-                    .tag-type-metadata > a:hover, 
-                    a.tag-type-metadata:hover, 
-                    .tag-type-metadata {
-                        color: var(--c-link-metadata) !important;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
 
 
             return autocomplete;
@@ -464,7 +430,27 @@
                         data.forEach(item => {
                             const option = document.createElement('div');
                             option.classList.add(`tag-type-${item.type}`);
-                            option.innerHTML = `<strong>${item.label.substr(0, value.length)}</strong>${item.label.substr(value.length)}`;
+                            //option.innerHTML = `<mark style="background-color: ${darkMode ? 'rgba(82, 82, 20, 0.8)' : 'rgba(255, 255, 0, 0.7)'}; padding: 0;">${item.label.substr(0, value.length)}</mark>${item.label.substr(value.length)}`;
+
+                            const mark = document.createElement('mark');
+                            mark.textContent = item.label.substr(0, value.length);
+                            mark.style.backgroundColor = darkMode ? 'rgba(82, 82, 20, 0.8)' : 'rgba(255, 255, 0, 0.7)';
+                            mark.style.padding = '0';
+
+                            const remainingText = document.createTextNode(item.label.substr(value.length));
+                            option.innerHTML = ''; // Очистим содержимое перед добавлением
+                            option.appendChild(mark);
+                            option.appendChild(remainingText);
+
+                            option.style.cursor = 'pointer';
+                            option.style.padding = '3px 0'; // Внутренние отступы сверху и снизу
+                            //option.style.textAlign = 'center'; // Центрирование текста (по желанию)
+                            option.style.display = 'flex'; // Включаем flexbox
+                            option.style.alignItems = 'center'; // Центрируем содержимое по вертикали
+                            option.style.justifyContent = 'flex-start'; // Дополнительно, если нужно выравнивание текста слева
+
+                            //option.style.marginBottom = '5px'; // Настройте значение по вашему вкусу
+
                             option.innerHTML += `<input type="hidden" value="${item.value}">`;
                             option.addEventListener('click', function(e) {
                                 const optionValue = hasMinus ? `-${this.getElementsByTagName('input')[0].value}` : this.getElementsByTagName('input')[0].value;
@@ -481,10 +467,15 @@
                                     items[i].style.backgroundColor = '';
                                     items[i].style.textShadow = '';
                                 }
-                                this.style.backgroundColor = 'rgb(170, 229, 164)';
+
+                                this.style.backgroundColor = darkMode ? '#505a50' : 'hsl(0, 0.00%, 90.60%)';
                                 if (darkMode) this.style.textShadow = "1px 1px 1px #000,-1px -1px 1px #000,1px -1px 1px #000,-1px 1px 1px #000";
                                 currentFocus = Array.prototype.indexOf.call(items, this);
                                 autocompleteOpen = true;
+                            });
+                            option.addEventListener('mouseleave', function() {
+                                this.style.textShadow = '';
+                                this.style.backgroundColor = '';
                             });
                             autocomplete.appendChild(option);
                         });
@@ -535,6 +526,41 @@
             document.addEventListener('click', function(event) {
                 closeAllLists(event.target);
             }, 'autocomplete');
+
+            if (darkMode) {
+                const style = document.createElement('style');
+                style.textContent = `
+                    .tag-type-artist > a, 
+                    a.tag-type-artist, 
+                    .tag-type-artist > a:hover, 
+                    a.tag-type-artist:hover, 
+                    .tag-type-artist {
+                        color: var(--c-link-artist) !important;
+                    }
+                    .tag-type-copyright > a, 
+                    a.tag-type-copyright, 
+                    .tag-type-copyright > a:hover, 
+                    a.tag-type-copyright:hover, 
+                    .tag-type-copyright {
+                        color: var(--c-link-copyright) !important;
+                    }
+                    .tag-type-character > a, 
+                    a.tag-type-character, 
+                    .tag-type-character > a:hover, 
+                    a.tag-type-character:hover, 
+                    .tag-type-character {
+                        color: var(--c-link-character) !important;
+                    }
+                    .tag-type-metadata > a, 
+                    a.tag-type-metadata, 
+                    .tag-type-metadata > a:hover, 
+                    a.tag-type-metadata:hover, 
+                    .tag-type-metadata {
+                        color: var(--c-link-metadata) !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
         }
         function addActive(list, currentFocus) {
             if (!list) {
@@ -547,7 +573,8 @@
             if (currentFocus < 0) {
                 currentFocus = list.length - 1;
             }
-            list[currentFocus].style.backgroundColor = 'rgb(170, 229, 164)';
+
+            list[currentFocus].style.backgroundColor = darkMode ? '#505a50' : 'hsl(0, 0.00%, 90.60%)';
             if (darkMode) list[currentFocus].style.textShadow = "1px 1px 1px #000,-1px -1px 1px #000,1px -1px 1px #000,-1px 1px 1px #000";
         }
         function removeActive(list) {
