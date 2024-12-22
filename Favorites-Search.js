@@ -386,10 +386,47 @@
             autocomplete.className = 'autocomplete-items';
             autocomplete.style.position = 'absolute';
             autocomplete.style.zIndex = '9999';
+            //autocomplete.style.backgroundColor = darkMode ? "rgb(48, 48, 48)" : 'rgba(182, 232, 176, 0.8)';
             autocomplete.style.backgroundColor = darkMode ? "rgb(48, 48, 48)" : 'white';
             autocomplete.style.color = 'black';
             autocomplete.style.border = '1px solid #ccc';
             autocomplete.style.padding = '5px';
+
+            if (darkMode) {
+                const style = document.createElement('style');
+                style.textContent = `
+                    .tag-type-artist > a, 
+                    a.tag-type-artist, 
+                    .tag-type-artist > a:hover, 
+                    a.tag-type-artist:hover, 
+                    .tag-type-artist {
+                        color: var(--c-link-artist) !important;
+                    }
+                    .tag-type-copyright > a, 
+                    a.tag-type-copyright, 
+                    .tag-type-copyright > a:hover, 
+                    a.tag-type-copyright:hover, 
+                    .tag-type-copyright {
+                        color: var(--c-link-copyright) !important;
+                    }
+                    .tag-type-character > a, 
+                    a.tag-type-character, 
+                    .tag-type-character > a:hover, 
+                    a.tag-type-character:hover, 
+                    .tag-type-character {
+                        color: var(--c-link-character) !important;
+                    }
+                    .tag-type-metadata > a, 
+                    a.tag-type-metadata, 
+                    .tag-type-metadata > a:hover, 
+                    a.tag-type-metadata:hover, 
+                    .tag-type-metadata {
+                        color: var(--c-link-metadata) !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
 
             return autocomplete;
         }
@@ -442,6 +479,7 @@
                                 const items = autocomplete.getElementsByTagName('div');
                                 for (let i = 0; i < items.length; i++) {
                                     items[i].style.backgroundColor = '';
+                                    items[i].style.textShadow = '';
                                 }
                                 this.style.backgroundColor = 'rgb(170, 229, 164)';
                                 if (darkMode) this.style.textShadow = "1px 1px 1px #000,-1px -1px 1px #000,1px -1px 1px #000,-1px 1px 1px #000";
