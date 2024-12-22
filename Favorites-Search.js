@@ -373,8 +373,6 @@
         function handleSearchBar(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                //searchButton.click();
-                //scan();
                 search();
             }
         }
@@ -470,11 +468,9 @@
                     if (list) {
                         list[currentFocus].click();
                     } else {
-                        //searchButton.click();
                         search();
                     }
                 } else if (currentFocus === -1) {
-                    //searchButton.click();
                     search();
                 }
             }
@@ -534,20 +530,7 @@
             inputWrapper.querySelector('input').addEventListener('keyup', handleSearchBar, true);
             console.log('Autocomplete destroyed');
         }
-        /*searchButton = createSearchButton(() => {
-            searchTags.length = 0;
-            negativeTags.length = 0;
-            inputTags = inputWrapper.querySelector('input').value.trim().split(' ');
-            inputTags = inputTags.map(tag => tag.toLowerCase());
-            inputTags.forEach(tag => {
-                if (tag.startsWith('-')) {
-                    negativeTags.push(tag.substring(1));
-                } else if (tag.length > 0) {
-                    searchTags.push(tag);
-                }
-            });
-            scan();
-        });*/
+
         function createSearchInput() {
             const header = document.getElementById('header');
             const navbar = document.getElementById('navbar');
@@ -1588,7 +1571,7 @@
         }
 
         // Обновляем контейнер с результатами при изменении страницы
-        function createPaginationControls(onPageChange) {
+        function createPaginationControls(onPageChange, isMain) {
             const paginationContainer = document.createElement('div');
             paginationContainer.style.display = 'flex';
             paginationContainer.style.justifyContent = 'center';
@@ -1602,15 +1585,36 @@
             prevButton.style.padding = '5px 10px';
             prevButton.style.cursor = 'pointer';
             prevButton.disabled = currentPage === 1;
-        
-            prevButton.addEventListener('click', () => {
+            prevButton.addEventListener('click', openPrevPage);
+
+            function openPrevPage() {
                 if (currentPage > 1) {
                     currentPage--;
                     onPageChange();
                     prevButton.blur(); // Снимаем фокус
                     displayCurretnpage();
                 }
-            });
+            }
+            function openNextPage() {
+                const totalPages = Math.ceil(currentResults.length / imagesPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    onPageChange();
+                    nextButton.blur(); // Снимаем фокус
+                    displayCurretnpage();
+                }
+            }
+            
+            if (isMain) {
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'ArrowLeft') {
+                        openPrevPage();
+                    }
+                    if (event.key === 'ArrowRight') {
+                        openNextPage();
+                    }
+                });
+            }
         
             // Элемент для отображения номера текущей страницы
             const pageIndicator = document.createElement('span');
@@ -1632,15 +1636,7 @@
             nextButton.style.padding = '5px 10px';
             nextButton.style.cursor = 'pointer';
         
-            nextButton.addEventListener('click', () => {
-                const totalPages = Math.ceil(currentResults.length / imagesPerPage);
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    onPageChange();
-                    nextButton.blur(); // Снимаем фокус
-                    displayCurretnpage();
-                }
-            });
+            nextButton.addEventListener('click', openNextPage);
         
             // Добавляем элементы в контейнер
             paginationContainer.appendChild(prevButton);
@@ -1717,8 +1713,8 @@
             imageCount.textContent = `Images: ${results.length - hidenVideoNumber}`;
         }
 
-        const bottomControls = createPaginationControls(updatePageControls);
-        const { paginationContainer, prevButton, nextButton, updatePageIndicator } = createPaginationControls(updatePageControls);
+        const bottomControls = createPaginationControls(updatePageControls, false);
+        const { paginationContainer, prevButton, nextButton, updatePageIndicator } = createPaginationControls(updatePageControls, true);
         function updatePageControls() {
             updatePageIndicator();
             bottomControls.updatePageIndicator();
