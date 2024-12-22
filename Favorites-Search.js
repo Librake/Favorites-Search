@@ -352,11 +352,30 @@
         let currentFocus;
         let searchInput = document.getElementById('searchTagInput');
         let autocompleteOpen = false;
-        let searchButton;
+        //let searchButton;
+        const inputWrapper = createSearchInputField();
+
+        function search() {
+            searchTags.length = 0;
+            negativeTags.length = 0;
+            inputTags = inputWrapper.querySelector('input').value.trim().split(' ');
+            inputTags = inputTags.map(tag => tag.toLowerCase());
+            inputTags.forEach(tag => {
+                if (tag.startsWith('-')) {
+                    negativeTags.push(tag.substring(1));
+                } else if (tag.length > 0) {
+                    searchTags.push(tag);
+                }
+            });
+            scan();
+        }
+
         function handleSearchBar(event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                searchButton.click();
+                //searchButton.click();
+                //scan();
+                search();
             }
         }
         function createAutocomplete() {
@@ -451,10 +470,12 @@
                     if (list) {
                         list[currentFocus].click();
                     } else {
-                        searchButton.click();
+                        //searchButton.click();
+                        search();
                     }
                 } else if (currentFocus === -1) {
-                    searchButton.click();
+                    //searchButton.click();
+                    search();
                 }
             }
         }
@@ -513,21 +534,20 @@
             inputWrapper.querySelector('input').addEventListener('keyup', handleSearchBar, true);
             console.log('Autocomplete destroyed');
         }
-        const inputWrapper = createSearchInputField();
-            searchButton = createSearchButton(() => {
-                searchTags.length = 0;
-                negativeTags.length = 0;
-                inputTags = inputWrapper.querySelector('input').value.trim().split(' ');
-                inputTags = inputTags.map(tag => tag.toLowerCase());
-                inputTags.forEach(tag => {
-                    if (tag.startsWith('-')) {
-                        negativeTags.push(tag.substring(1));
-                    } else if (tag.length > 0) {
-                        searchTags.push(tag);
-                    }
-                });
-                scan();
+        /*searchButton = createSearchButton(() => {
+            searchTags.length = 0;
+            negativeTags.length = 0;
+            inputTags = inputWrapper.querySelector('input').value.trim().split(' ');
+            inputTags = inputTags.map(tag => tag.toLowerCase());
+            inputTags.forEach(tag => {
+                if (tag.startsWith('-')) {
+                    negativeTags.push(tag.substring(1));
+                } else if (tag.length > 0) {
+                    searchTags.push(tag);
+                }
             });
+            scan();
+        });*/
         function createSearchInput() {
             const header = document.getElementById('header');
             const navbar = document.getElementById('navbar');
@@ -538,7 +558,9 @@
             const helpContainer = createHelpTooltip(isMobile ? -20 : 0);
             const settingsContainer = createSettings();
             const createToggleElement = isMobile ? createToggleButton : createCheckbox;
-            const verbatimModeContainer = createToggleElement('verbatimModeCheckbox', 'Verbatim mode', hardSearch, (checked) => {
+
+            const verbatimModeButtonTitle = isMobile ? 'Verbatim' : 'Verbatim mode';
+            const verbatimModeContainer = createToggleElement('verbatimModeCheckbox', verbatimModeButtonTitle, hardSearch, (checked) => {
                 hardSearch = checked;
                 if (checked === false) {
                     toggleActiveState(useBlacklistContainer, false);
@@ -552,8 +574,8 @@
             });
             
 
-
-            const orModeContainer = createToggleElement('orMode', 'Or mode', orMode, (checked) => {
+            const orModeButtonTitle = isMobile ? 'Or' : 'Or mode';
+            const orModeContainer = createToggleElement('orMode', orModeButtonTitle, orMode, (checked) => {
                 orMode = checked;
                 localStorage.setItem('orMode', JSON.stringify(checked));
             });
@@ -582,6 +604,10 @@
                 }
             }
             
+
+            const searchButton = createSearchButton(() => {
+                search();
+            });
 
             const progress = document.createElement('span');
             progress.id = 'progress';
@@ -1520,7 +1546,7 @@
         // Создаём выпадающий список для выбора размера страницы
         function createPageSizeSelector(updatePageIndicator) {
             const pageSizeContainer = document.createElement('div');
-            pageSizeContainer.style.marginLeft = '20px';
+            pageSizeContainer.style.marginLeft = '50px';
             pageSizeContainer.style.display = 'flex';
             pageSizeContainer.style.alignItems = 'center';
 
@@ -1534,7 +1560,6 @@
             const pageSizeSelect = document.createElement('select');
             pageSizeSelect.style.padding = '5px';
             pageSizeSelect.style.fontSize = '16px';
-            pageSizeSelect.style.marginRight = '30px';
 
 
             pageSizes.forEach(size => {
@@ -1569,7 +1594,7 @@
             paginationContainer.style.justifyContent = 'center';
             paginationContainer.style.alignItems = 'center';
             paginationContainer.style.margin = '10px 0';
-            paginationContainer.style.marginRight = '30px';
+            paginationContainer.style.marginRight = '0px';
         
             const prevButton = document.createElement('button');
             prevButton.textContent = '<';
@@ -1672,9 +1697,6 @@
         resultContainer.style.display = 'flex';
         resultContainer.style.flexDirection = 'column';
 
-
-        // Создаём imagesContainer для картинок
-
         const imagesContainer = document.createElement('div');
         imagesContainer.id = 'imagesContainer';
         imagesContainer.style.width = '100%';
@@ -1684,14 +1706,10 @@
         imagesContainer.style.justifyContent = 'flex-start';
         imagesContainer.style.alignContent = 'flex-start';
         imagesContainer.style.alignItems = 'flex-start';
-        //imagesContainer.style.minHeight = '600px';
         
-
         function scrollToTop() {
             resultContainer.scrollTop = 0;
         }
-
-
 
         const imageCount = document.createElement('div');
         let hidenVideoNumber = 0;
@@ -1708,9 +1726,6 @@
         
 
         function createHeaderContainer() {
-
-            
-
             const defaultButtonColor = '#DBA19D'; // Цвет кнопок по умолчанию
             const defaultButtonColorHowered = '#9E7471';
             const activeButtonColor = '#e26c5e'; // Цвет для активной кнопки
@@ -1911,10 +1926,6 @@
                 }
                 updatePageControls();
             };
-
-
-            const imageCountContainer = document.createElement('div');
-            imageCountContainer.appendChild(imageCount);
         
             const pageSizeSelector = createPageSizeSelector(updatePageControls);
 
@@ -1927,15 +1938,7 @@
             topPageControls.appendChild(paginationContainer);
             topPageControls.appendChild(pageSizeSelector);
 
-
-
-            controlsContainer.appendChild(toggleRemoveLabelContainer);
-            controlsContainer.appendChild(randomizeButton);
-            controlsContainer.appendChild(dateButton);
-            controlsContainer.appendChild(scoreButton);
-
-            controlsContainer.appendChild(imageCountContainer);
-            controlsContainer.appendChild(topPageControls);
+            
             
             // При обновлении страницы обновляем кнопки
             setInterval(() => {
@@ -1948,7 +1951,12 @@
 
             function updateLayout() {
                 const screenWidth = window.innerWidth || document.documentElement.clientWidth;
-                if (screenWidth >= 1010) {
+                if (screenWidth >= 1250) {
+                    controlsContainer.appendChild(toggleRemoveLabelContainer);
+                    controlsContainer.appendChild(randomizeButton);
+                    controlsContainer.appendChild(dateButton);
+                    controlsContainer.appendChild(scoreButton);
+
                     randomizeButton.style.marginLeft = '50px';
                     headerContainer.style.flexDirection = 'row';
                     headerContainer.style.justifyContent = 'space-between';
@@ -1960,8 +1968,11 @@
                     imageCount.style.marginLeft = '600px';
                     imageCount.style.top = 'auto'; 
 
+                    pageSizeSelector.style.marginLeft = '50px';
+
                     controlsContainer.style.flexDirection = 'row';
                     controlsContainer.style.justifyContent = 'flex-start';
+                    controlsContainer.appendChild(topPageControls);
                     controlsContainer.appendChild(imageCount);
                     toggleRemoveLabelText.textContent = 'Removing';
                     toggleRemoveLabelContainer.style.marginLeft = '10px';
@@ -1969,7 +1980,16 @@
                     headerContainer.appendChild(controlsContainer);
 
                 } else {
-                    randomizeButton.style.marginLeft = '20px';
+                    const imageCountContainer = document.createElement('div');
+                    imageCountContainer.appendChild(imageCount);
+                    imageCountContainer.appendChild(toggleRemoveLabelContainer);
+                    imageCountContainer.style.flexDirection = 'row';
+                    imageCountContainer.style.position = 'relative';
+                    imageCountContainer.style.display = 'flex'; // Устанавливаем flexbox
+
+                    pageSizeSelector.style.marginLeft = '0px';
+
+                    randomizeButton.style.marginLeft = '0px';
                     headerContainer.style.flexDirection = 'column';
                     headerContainer.style.alignItems = 'flex-start';
 
@@ -1980,11 +2000,27 @@
 
                     controlsContainer.style.flexDirection = 'row';
                     controlsContainer.style.justifyContent = 'flex-start';
-                    toggleRemoveLabelText.textContent = 'Remove Labels';
+
                     toggleRemoveLabelContainer.style.marginLeft = '0px';
+                    toggleRemoveLabelContainer.style.position = 'relative';
+                    toggleRemoveLabelContainer.style.marginLeft = '30px';
 
+                    topPageControls.style.position = 'relative';
+                    topPageControls.style.marginLeft = '0px';
 
-                    headerContainer.appendChild(imageCount);
+                    pageSizeSelector.style.marginLeft = '10px';
+
+                    const spacer = document.createElement('div');
+                    spacer.style.width = '100%';
+                    spacer.style.height = '10px';
+
+                    controlsContainer.appendChild(randomizeButton);
+                    controlsContainer.appendChild(dateButton);
+                    controlsContainer.appendChild(scoreButton);
+
+                    headerContainer.appendChild(imageCountContainer);
+                    headerContainer.appendChild(topPageControls);
+                    headerContainer.appendChild(spacer);
                     headerContainer.appendChild(controlsContainer);
                 }
             }
