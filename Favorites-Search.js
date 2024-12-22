@@ -2105,7 +2105,6 @@
             resultItem.style.margin = '10px';
             resultItem.style.alignSelf = 'flex-start';
 
-            resultItem.style.height = '250px';
             resultItem.style.position = 'relative';
             resultItem.style.transition = 'height 0.15s'
         
@@ -2122,7 +2121,9 @@
 
             // Обновляем высоту resultItem в зависимости от состояния кнопки
             function updateResultItemHeight() {
-                resultItem.style.height = removeLabel.style.display === 'inline' ? '275px' : '250px'; // Высота с кнопкой
+                if (!isMobile) {
+                    resultItem.style.height = removeLabel.style.display === 'inline' ? '275px' : '250px'; // Высота с кнопкой
+                }
             }
 
             removeLabel.onclick = (event) => {
