@@ -16,10 +16,14 @@
 // ==/UserScript==
 
 
-// === Version 1.2 Changelog ===
-// - Fixed scanning issues such as blank results page and freezing before completion.
-// - Added settings menu.
-// - New feature: Favorites detection (highlights your favorites with a red border on other pages of the site).
+// === Version 1.3 Changelog ===
+// - Search tags autocomplete in Verbatim mode
+// - Sort Score and other sorting options
+// - Results pagination
+// - Toggle to hide blacklisted images
+// - Auto refresh Favorites page if you added new favorites
+// - Fixed removing without page reload and script reset
+// - Fixed Favorites detection on other pages without rescan
 
 
 
@@ -152,7 +156,7 @@
         loadedTags = savedInputTags ? JSON.parse(savedInputTags) : [];
 
         const savedHardSearch = localStorage.getItem('hardSearch');
-        hardSearch = savedHardSearch ? JSON.parse(savedHardSearch) : false;
+        hardSearch = savedHardSearch ? JSON.parse(savedHardSearch) : true;
         const savedOrMode = localStorage.getItem('orMode');
         orMode = savedOrMode ? JSON.parse(savedOrMode) : false;
 
@@ -176,7 +180,7 @@
 
     function loadSavedUserId() {
         const savedPrevId = localStorage.getItem('userId');
-        return (savedPrevId && savedPrevId != 'undefined') ? JSON.parse(savedPrevId) : 0;
+        return (savedPrevId && savedPrevId != 'undefined') ? JSON.parse(savedPrevId) : null;
     }
 
     function reset() {
@@ -1621,7 +1625,7 @@
             pageIndicator.style.margin = '0 10px';
             pageIndicator.style.fontSize = '16px';
             pageIndicator.style.fontFamily = 'Verdana, sans-serif';
-            pageIndicator.style.color = '#333';
+            pageIndicator.style.color = darkMode ? textColor : '#333'
         
             function updatePageIndicator() {
                 const totalPages = Math.ceil(currentResults.length / imagesPerPage);
@@ -2221,24 +2225,30 @@
     let favCountOnLastUpdate;
 
     async function fastCheckForScanIsNeeded() {
-        const sameUser = getIdFromUrl() == loadSavedUserId();
+        const savedUserId = loadSavedUserId();
 
-        if (!sameUser) {
-            const scanStatus = document.getElementById('progress').textContent;
-            return !(scanStatus == 'new user');
+        if (savedUserId) {
+            const sameUser = getIdFromUrl() == savedUserId;
+            if (!sameUser) {
+                const scanStatus = document.getElementById('progress').textContent;
+                return !(scanStatus == 'new user');
+            }
+            else {
+                return getFavoritesCount(userId).then(favCount => {
+                    const haveNewFavs = favCount != favCountOnLastUpdate;
+                    if (haveNewFavs && favCountOnLastUpdate) {
+                        favCountOnLastUpdate = favCount;
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                });
+
+            }
         }
         else {
-            return getFavoritesCount(userId).then(favCount => {
-                const haveNewFavs = favCount != favCountOnLastUpdate;
-                if (haveNewFavs) {
-                    favCountOnLastUpdate = favCount;
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            });
-
+            return false;
         }
     }
 
@@ -2248,11 +2258,31 @@
         });
     }
 
+    function checkForUpdate() {
+        const savedVersion = localStorage.getItem('scriptVersion');
+        if (savedVersion) {
+            if (savedVersion != scriptVersion) {
+                alert(`Favorites Search script was updated to version ${scriptVersion}\n
+                    New features available:\n
+                    - Search tags autocomplete in Verbatim mode\n
+                    - Sort Score and other sorting options\n
+                    - Results pagination\n
+                    - Toggle to hide blacklisted images\n
+                    - Auto refresh Favorites page if you added new favorites\n
+                    - Fixed removing without page reload and script reset\n
+                    - Fixed Favorites detection on other pages without rescan`);
+
+                reset();
+            }
+        }
+    }
+
     function init() {
         if (customIcon) {
             updateIcon('https://i.imgur.com/EtURK0r.png');
         }
 
+        checkForUpdate();
         localStorage.setItem('scriptVersion', scriptVersion);
 
         SearchInputModule.createSearchInput();
