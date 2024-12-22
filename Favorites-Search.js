@@ -1955,9 +1955,11 @@
 
                     randomizeButton.style.marginLeft = '50px';
                     headerContainer.style.flexDirection = 'row';
-                    headerContainer.style.justifyContent = 'space-between';
+                    //headerContainer.style.justifyContent = 'space-between';
                     headerContainer.style.alignItems = 'center';
                     headerContainer.style.position = 'relative';
+                    headerContainer.style.marginTop = '0px';
+                    headerContainer.style.justifyContent = 'flex-start';
 
                     imageCount.style.position = 'absolute';
                     imageCount.style.marginBottom = '0';
@@ -1966,8 +1968,12 @@
 
                     pageSizeSelector.style.marginLeft = '50px';
 
+                    topPageControls.style.position = 'absolute';
+                    topPageControls.style.marginLeft = '850px';
+
                     controlsContainer.style.flexDirection = 'row';
                     controlsContainer.style.justifyContent = 'flex-start';
+                    controlsContainer.style.marginTop = '0px';
                     controlsContainer.appendChild(topPageControls);
                     controlsContainer.appendChild(imageCount);
                     toggleRemoveLabelText.textContent = 'Removing';
@@ -1975,7 +1981,45 @@
 
                     headerContainer.appendChild(controlsContainer);
 
-                } else {
+                } 
+                else if (screenWidth >= 600) {
+                    const imageCountContainer = document.createElement('div');
+                    imageCountContainer.style.flexDirection = 'row';
+                    imageCountContainer.style.position = 'relative';
+                    imageCountContainer.style.display = 'flex';
+                    imageCountContainer.style.alignItems = 'center';
+                    imageCountContainer.appendChild(imageCount);
+                    imageCountContainer.appendChild(topPageControls);
+
+                    controlsContainer.appendChild(toggleRemoveLabelContainer);
+                    controlsContainer.appendChild(randomizeButton);
+                    controlsContainer.appendChild(dateButton);
+                    controlsContainer.appendChild(scoreButton);
+
+                    randomizeButton.style.marginLeft = '50px';
+                    headerContainer.style.flexDirection = 'column';
+                    headerContainer.style.alignItems = 'flex-start';
+
+                    imageCount.style.position = 'relative';
+                    imageCount.style.marginBottom = '0px';
+                    imageCount.style.transform = 'translateX(0%)';
+                    imageCount.style.marginLeft = '10px';
+
+                    pageSizeSelector.style.marginLeft = '50px';
+
+                    topPageControls.style.position = 'relative';
+                    topPageControls.style.marginLeft = '50px';
+
+                    controlsContainer.style.flexDirection = 'row';
+                    controlsContainer.style.justifyContent = 'flex-start';
+                    controlsContainer.style.marginTop = '0px';
+                    toggleRemoveLabelText.textContent = 'Removing';
+                    toggleRemoveLabelContainer.style.marginLeft = '10px';
+
+                    headerContainer.appendChild(imageCountContainer);
+                    headerContainer.appendChild(controlsContainer);
+                }          
+                else {
                     const imageCountContainer = document.createElement('div');
                     imageCountContainer.appendChild(imageCount);
                     imageCountContainer.appendChild(toggleRemoveLabelContainer);
@@ -1996,6 +2040,7 @@
 
                     controlsContainer.style.flexDirection = 'row';
                     controlsContainer.style.justifyContent = 'flex-start';
+                    controlsContainer.style.marginTop = '10px';
 
                     toggleRemoveLabelContainer.style.marginLeft = '0px';
                     toggleRemoveLabelContainer.style.position = 'relative';
@@ -2006,17 +2051,12 @@
 
                     pageSizeSelector.style.marginLeft = '10px';
 
-                    const spacer = document.createElement('div');
-                    spacer.style.width = '100%';
-                    spacer.style.height = '10px';
-
                     controlsContainer.appendChild(randomizeButton);
                     controlsContainer.appendChild(dateButton);
                     controlsContainer.appendChild(scoreButton);
 
                     headerContainer.appendChild(imageCountContainer);
                     headerContainer.appendChild(topPageControls);
-                    headerContainer.appendChild(spacer);
                     headerContainer.appendChild(controlsContainer);
                 }
             }
