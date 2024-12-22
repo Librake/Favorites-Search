@@ -1034,12 +1034,16 @@
 
 
             const content = [
-                `Script's search uses keywords instead of tags, you can search by any part of the tag, such as '<span style="color: #EC91FF;">gahara</span>' instead of 'senjou<span style="color: #EC91FF;">gahara</span>_hitagi'.`,
-                "Verbatim mode - switch to standard search by full tags instead of keywords.",
-                "Or mode - should search result contain any or all of tags/keywords.",
+                `<b>Verbatim mode</b> ON - standard search by full tags with autocomplete.`,
+                `<b>Verbatim mode OFF</b> - search using keywords instead of tags, you can search by any part of the tag, such as '<span style="color: #EC91FF;">gahara</span>' instead of 'senjou<span style="color: #EC91FF;">gahara</span>_hitagi'.`,
+                "<b>Or mode</b> - should search result contain 'any' or 'all' of tags/keywords.",
+                "<b>Use blacklist</b> - hide search results with tags stated in your account's blacklist.",
                 "Use '-' to exclude tags/keywords.",
                 "A full scan takes a while, but it's only needed for the first search or after a reset.",
-                "On the search results page, use the Back button on the screen or Esc instead of the Back button on your browser."
+                "Script doesn't work properly in incognito mode, browser restart clears all cached scanned data.",
+                "On the search results page, use the Back button on the screen or Esc instead of the Back button on your browser.",
+                `Compatible with <a href="${'https://www.google.com/search?q=Imagus'}" target="_blank" style="color: #7289DA; text-decoration: underline; font-size: 1.2em;">Imagus</a>,
+             a very useful extension for Booru sites for full-screen mouse-over image preview.`
             ];
 
             const list = document.createElement('ul');
@@ -2149,6 +2153,11 @@
 
         displayCurretnpage();
 
+        function returnToFavPage() {
+            localStorage.setItem('fromBack', JSON.stringify(true));
+            location.reload();
+        }
+
         const backButton = document.createElement('button');
         backButton.textContent = 'Back';
         backButton.style.position = 'fixed';
@@ -2169,14 +2178,13 @@
 
         });
         backButton.addEventListener('click', () => {
-            localStorage.setItem('fromBack', JSON.stringify(true));
-            location.reload();
+            returnToFavPage();
         });
         document.body.appendChild(backButton);
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
-                backButton.click();
+                returnToFavPage();
             }
         });
 
