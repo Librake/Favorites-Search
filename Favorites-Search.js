@@ -418,7 +418,6 @@
             closeAllLists();
             currentFocus = -1;
 
-            console.log(value);
 
             fetch(`https://ac.rule34.xxx/autocomplete.php?q=${value}`)
                 .then(response => response.json())
