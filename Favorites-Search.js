@@ -1043,7 +1043,7 @@
 
             const content = [
                 `<b>Verbatim mode</b> ON - standard search by full tags with autocomplete.`,
-                `<b>Verbatim mode OFF</b> - search using keywords instead of tags, you can search by any part of the tag, such as '<span style="color: #EC91FF;">gahara</span>' instead of 'senjou<span style="color: #EC91FF;">gahara</span>_hitagi'.`,
+                `<b>Verbatim mode</b> OFF - search using keywords instead of tags, you can search by any part of the tag, such as '<span style="color: #EC91FF;">gahara</span>' instead of 'senjou<span style="color: #EC91FF;">gahara</span>_hitagi'.`,
                 "<b>Or mode</b> - should search result contain 'any' or 'all' of tags/keywords.",
                 "<b>Use blacklist</b> - hide search results with tags stated in your account's blacklist.",
                 "Use '-' to exclude tags/keywords.",
@@ -2353,15 +2353,7 @@
         const savedVersion = localStorage.getItem('scriptVersion');
         if (savedVersion) {
             if (savedVersion != scriptVersion) {
-                alert(`Favorites Search script was updated to version ${scriptVersion}\n
-                    New features available:\n
-                    - Search tags autocomplete in Verbatim mode\n
-                    - Sort Score and other sorting options\n
-                    - Results pagination\n
-                    - Toggle to hide blacklisted images\n
-                    - Auto refresh Favorites page if you added new favorites\n
-                    - Fixed removing without page reload and script reset\n
-                    - Fixed Favorites detection on other pages without rescan`);
+                alert(`Favorites Search script was updated to version ${scriptVersion}\nNew features available:\n- Search tags autocomplete in Verbatim mode\n- Sort Score and other sorting options\n- Results pagination\n- Toggle to hide blacklisted images\n- Auto refresh Favorites page if you added new favorites\n- Fixed removing without page reload and script reset\n- Fixed Favorites detection on other pages without rescan`);
 
                 reset();
             }
