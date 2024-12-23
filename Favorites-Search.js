@@ -447,7 +447,7 @@
                         option.appendChild(remainingText);
 
                         option.style.cursor = 'pointer';
-                        option.style.padding = '3px 0'; // Внутренние отступы сверху и снизу
+                        option.style.padding = isMobile ? '5px 0' : '3px 0'; // Внутренние отступы сверху и снизу
                         option.style.display = 'flex'; // Включаем flexbox
                         option.style.alignItems = 'center'; // Центрируем содержимое по вертикали
                         option.style.justifyContent = 'flex-start'; // Дополнительно, если нужно выравнивание текста слева
