@@ -635,16 +635,16 @@
             const useBlacklistContainer = createToggleElement('useBlacklist', 'Use blacklist', useBlacklist, (checked) => {
                 useBlacklist = checked;
                 // If verbatim mode is disabled, blacklist is disabled as well, because the rule34 blacklist with normal tags
-                toggleActiveState(verbatimModeContainer, checked);
 
-                hardSearch = checked;
                 if (checked === true) {
-                    initAutoComplete(searchInput);
-                } else {
-                    destroyAutocomplete(searchInput, inputWrapper);
+                    if (!hardSearch) {
+                        hardSearch = true;
+                        initAutoComplete(searchInput);
+                        toggleActiveState(verbatimModeContainer, true);
+                        localStorage.setItem('hardSearch', JSON.stringify(checked));
+                    }
                 }
                 localStorage.setItem('useBlacklist', JSON.stringify(checked));
-                localStorage.setItem('hardSearch', JSON.stringify(checked));
             });
             function toggleActiveState(element, isActive) {
                 if (isMobile) {
