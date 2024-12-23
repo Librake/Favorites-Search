@@ -66,7 +66,7 @@
 
     const discordLink = "https://discord.gg/jZzYFNeCTw"
 
-    const scriptVersion = '1.2';
+    const scriptVersion = '1.3';
     let allImages = [];
     let loadedImages = [];
     let images;
@@ -2188,6 +2188,29 @@
             }
         });
 
+        const bottomSpacer = document.createElement('div');
+        bottomSpacer.style.width = '100%';
+        bottomSpacer.style.height = '50px';
+        bottomSpacer.style.flexShrink = '0'; // Предотвращает сжатие элемента в flex-контейнере
+        bottomSpacer.style.display = 'block';
+
+        if (isMobile) {
+            
+            document.addEventListener('touchmove', function(event) {
+                const scrollPosition = window.scrollY; // Текущая позиция прокрутки
+                const maxScroll = document.documentElement.scrollHeight - window.innerHeight; // Максимальная прокрутка
+            
+                if (scrollPosition >= maxScroll && event.touches[0].clientY > 0) {
+                    // Находимся внизу и пользователь пытается смахнуть вверх
+                    event.preventDefault();
+                }
+            }, { passive: false });
+            
+            setTimeout(() => {
+                scrollToTop();
+            }, 300);
+        }
+
         document.title = tabTitle || 'Results';
         document.body.style.margin = '0';
         document.body.style.padding = '0';
@@ -2195,6 +2218,7 @@
         document.body.style.overflow = 'hidden';
 
         resultContainer.appendChild(bottomControls.paginationContainer);
+        if (isMobile) resultContainer.appendChild(bottomSpacer);
         document.body.appendChild(resultContainer);
 
         function updateCurrentResults(shuffledResults) {
