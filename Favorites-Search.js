@@ -1572,7 +1572,7 @@
         const savedImagesPerPage = localStorage.getItem('imagesPerPage') || defaultPageSize;
         let imagesPerPage = savedImagesPerPage === 'All' ? actualFavCount : parseInt(savedImagesPerPage, 10);
 
-        const pageSizes = [10, 15, 25, 50, 100, 250, 500, 1000, 'All'];
+        const pageSizes = [5, 10, 15, 25, 50, 100, 250, 500, 1000, 'All'];
 
 
         let currentPage = 1;
