@@ -210,12 +210,12 @@
         return removalQueue ? JSON.parse(removalQueue) : [];
     }
     function addToRemovalQueue(id) {
-        const removalQueue = getRemovalQueue(); // Читаем текущий список
+        const removalQueue = getRemovalQueue();
         removalQueue.push(id);
-        localStorage.setItem('removalQueue', JSON.stringify(removalQueue)); // Сохраняем обновлённый список
+        localStorage.setItem('removalQueue', JSON.stringify(removalQueue)); 
     }
     function clearRemovalQueue() {
-        localStorage.removeItem('removalQueue'); // Удаляем элемент из хранилища
+        localStorage.removeItem('removalQueue');
     }
 
     function getAdditionalQueue() {
@@ -233,17 +233,13 @@
         localStorage.removeItem('additionalQueue');
     }
     function removeFromAdditionalQueue(id) {
-        // Получаем текущий список из localStorage
         const additionalQueueData = localStorage.getItem('additionalQueue');
         const additionalQueue = additionalQueueData ? JSON.parse(additionalQueueData) : [];
     
-        // Находим индекс указанного id
         const index = additionalQueue.indexOf(id);
         if (index !== -1) {
-            // Удаляем id из списка
             additionalQueue.splice(index, 1);
     
-            // Сохраняем обновленный список в localStorage
             localStorage.setItem('additionalQueue', JSON.stringify(additionalQueue));
     
             console.log(`ID ${id} успешно удален из additionalQueue.`);
@@ -356,7 +352,6 @@
         let currentFocus;
         let searchInput = document.getElementById('searchTagInput');
         let autocompleteOpen = false;
-        //let searchButton;
         const inputWrapper = createSearchInputField();
 
         function search() {
@@ -386,7 +381,7 @@
             autocomplete.className = 'autocomplete-items';
             autocomplete.style.position = 'absolute';
             autocomplete.style.zIndex = '9999';
-            //autocomplete.style.backgroundColor = darkMode ? "rgb(48, 48, 48)" : 'rgba(182, 232, 176, 0.8)';
+            autocomplete.style.backgroundColor = darkMode ? "rgb(48, 48, 48)" : 'rgba(182, 232, 176, 0.8)';
             autocomplete.style.backgroundColor = darkMode ? "rgb(48, 48, 48)" : 'white';
             autocomplete.style.color = 'black';
             autocomplete.style.border = '1px solid #ccc';
@@ -408,7 +403,6 @@
 
             value = value.trim().split(' ').pop();
             let hasMinus = false;
-            // If value has - at the beginning, remove it
 
             if (value[0] === '-') {
                 hasMinus = true;
@@ -442,15 +436,15 @@
                         mark.style.padding = '0';
 
                         const remainingText = document.createTextNode(item.label.substr(value.length));
-                        option.innerHTML = ''; // Очистим содержимое перед добавлением
+                        option.innerHTML = '';
                         option.appendChild(mark);
                         option.appendChild(remainingText);
 
                         option.style.cursor = 'pointer';
-                        option.style.padding = isMobile ? '5px 0' : '3px 0'; // Внутренние отступы сверху и снизу
-                        option.style.display = 'flex'; // Включаем flexbox
-                        option.style.alignItems = 'center'; // Центрируем содержимое по вертикали
-                        option.style.justifyContent = 'flex-start'; // Дополнительно, если нужно выравнивание текста слева
+                        option.style.padding = isMobile ? '5px 0' : '3px 0';
+                        option.style.display = 'flex';
+                        option.style.alignItems = 'center';
+                        option.style.justifyContent = 'flex-start';
 
                         option.innerHTML += `<input type="hidden" value="${item.value}">`;
                         option.addEventListener('click', function(e) {
@@ -524,7 +518,6 @@
                 }
         }
         function initAutoComplete(searchInput) {
-            // https://ac.rule34.xxx/autocomplete.php?q=
             inputWrapper.querySelector('input').removeEventListener('keyup', handleSearchBar, true);
             searchInput.addEventListener('input',handleAutoComplete , 'autocomplete');
             searchInput.addEventListener('keydown',handleAutocompleteSelection , 'autocomplete');
@@ -642,7 +635,6 @@
 
             const useBlacklistContainer = createToggleElement('useBlacklist', 'Use blacklist', useBlacklist, (checked) => {
                 useBlacklist = checked;
-                // If verbatim mode is disabled, blacklist is disabled as well, because the rule34 blacklist with normal tags
 
                 if (checked === true) {
                     if (!hardSearch) {
@@ -1581,19 +1573,16 @@
 
         document.body.innerHTML = '';
 
-        const defaultPageSize = 50; // Значение по умолчанию
-
+        const defaultPageSize = 50;
         const savedImagesPerPage = localStorage.getItem('imagesPerPage') || defaultPageSize;
         let imagesPerPage = savedImagesPerPage === 'All' ? actualFavCount : parseInt(savedImagesPerPage, 10);
 
-        // Задаём допустимые значения для выбора размера страницы
         const pageSizes = [10, 15, 25, 50, 100, 250, 500, 1000, 'All'];
 
 
-        let currentPage = 1; // Текущая страница
+        let currentPage = 1;
         let currentResults = results.slice();
 
-        // Функция для отображения страниц
         function displayCurretnpage() {
             showResults(currentResults);
             scrollToTop();
@@ -1607,7 +1596,6 @@
             return paginatedResults;
         }
 
-        // Создаём выпадающий список для выбора размера страницы
         function createPageSizeSelector(updatePageIndicator) {
             const pageSizeContainer = document.createElement('div');
             pageSizeContainer.style.marginLeft = '50px';
@@ -1628,21 +1616,20 @@
 
             pageSizes.forEach(size => {
                 const option = document.createElement('option');
-                option.value = size; // Для "All" используем всю длину массива
+                option.value = size;
                 option.textContent = size;
                 pageSizeSelect.appendChild(option);
             });
 
-            pageSizeSelect.value = savedImagesPerPage; // Устанавливаем текущее значение
+            pageSizeSelect.value = savedImagesPerPage; 
 
-            // Обработчик изменения размера страницы
             pageSizeSelect.addEventListener('change', () => {
                 const size = pageSizeSelect.value;
-                imagesPerPage = size === 'All'? actualFavCount : parseInt(size, 10); // Новое количество элементов на странице
+                imagesPerPage = size === 'All'? actualFavCount : parseInt(size, 10);
                 localStorage.setItem('imagesPerPage', size);
-                currentPage = 1; // Возвращаемся на первую страницу
+                currentPage = 1;
                 displayCurretnpage();
-                updatePageIndicator(); // Обновляем индикатор номера страницы
+                updatePageIndicator();
             });
 
             pageSizeContainer.appendChild(pageSizeLabel);
@@ -1651,7 +1638,6 @@
             return pageSizeContainer;
         }
 
-        // Обновляем контейнер с результатами при изменении страницы
         function createPaginationControls(onPageChange, isMain) {
             const paginationContainer = document.createElement('div');
             paginationContainer.style.display = 'flex';
@@ -1672,7 +1658,7 @@
                 if (currentPage > 1) {
                     currentPage--;
                     onPageChange();
-                    prevButton.blur(); // Снимаем фокус
+                    prevButton.blur();
                     displayCurretnpage();
                 }
             }
@@ -1681,7 +1667,7 @@
                 if (currentPage < totalPages) {
                     currentPage++;
                     onPageChange();
-                    nextButton.blur(); // Снимаем фокус
+                    nextButton.blur();
                     displayCurretnpage();
                 }
             }
@@ -1697,39 +1683,33 @@
                 });
 
                 if (isMobile) {
-                    let touchStartX = 0; // Начальная координата по оси X
-                    let touchEndX = 0;   // Конечная координата по оси X
+                    let touchStartX = 0;
+                    let touchEndX = 0;
 
-                    // Функция для обработки начала касания
                     function handleTouchStart(event) {
                         touchStartX = event.touches[0].clientX;
                     }
 
-                    // Функция для обработки завершения касания
                     function handleTouchEnd(event) {
                         touchEndX = event.changedTouches[0].clientX;
 
-                        // Вычисляем разницу координат
                         const deltaX = touchEndX - touchStartX;
 
-                        // Условие для свайпа вправо или влево
-                        if (Math.abs(deltaX) > 100) { // Убедимся, что свайп достаточно длинный
+                        if (Math.abs(deltaX) > 100) {
                             if (deltaX > 0) {
-                                openPrevPage(); // Свайп вправо (предыдущая страница)
+                                openPrevPage();
                             } else {
-                                openNextPage(); // Свайп влево (следующая страница)
+                                openNextPage();
                             }
                         }
                     }
 
-                    // Привязка обработчиков к контейнеру результата
                     resultContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
                     resultContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
 
                 }
             }
         
-            // Элемент для отображения номера текущей страницы
             const pageIndicator = document.createElement('span');
             pageIndicator.style.margin = '0 10px';
             pageIndicator.style.fontSize = '16px';
@@ -1751,12 +1731,10 @@
         
             nextButton.addEventListener('click', openNextPage);
         
-            // Добавляем элементы в контейнер
             paginationContainer.appendChild(prevButton);
             paginationContainer.appendChild(pageIndicator);
             paginationContainer.appendChild(nextButton);
         
-            // Инициализируем индикатор страницы
             updatePageIndicator();
         
             return { paginationContainer, prevButton, nextButton, updatePageIndicator };
@@ -1829,10 +1807,10 @@
         
 
         function createHeaderContainer() {
-            const defaultButtonColor = '#DBA19D'; // Цвет кнопок по умолчанию
+            const defaultButtonColor = '#DBA19D';
             const defaultButtonColorHowered = '#9E7471';
-            const activeButtonColor = '#e26c5e'; // Цвет для активной кнопки
-            const activeButtonColorHowered = '#c45a4b'; // Цвет для активной кнопки
+            const activeButtonColor = '#e26c5e';
+            const activeButtonColorHowered = '#c45a4b';
             
             let selectedButton;  
             function isButtonSelected(button) {
@@ -1928,7 +1906,7 @@
 
             const scoreButton = document.createElement('button');
             scoreButton.textContent = 'Score';
-            scoreButton.style.backgroundColor = defaultButtonColor; // Зелёный цвет для кнопки
+            scoreButton.style.backgroundColor = defaultButtonColor; 
             scoreButton.style.color = 'white';
             scoreButton.style.border = 'none';
             scoreButton.style.padding = '5px 10px 3px 10px';
@@ -1937,7 +1915,7 @@
             scoreButton.style.fontSize = '18px';
             scoreButton.style.marginLeft = '20px';
             scoreButton.style.marginRight = '400px';
-            scoreButton.style.flexShrink = '0'; // Запрещаем кнопке сжиматься
+            scoreButton.style.flexShrink = '0';
 
 
             scoreButton.onmouseover = () => {
@@ -1982,7 +1960,7 @@
             };
 
             const dateButton = document.createElement('button');
-            dateButton.textContent = 'New'; // По умолчанию выводим новые
+            dateButton.textContent = 'New';
             dateButton.style.backgroundColor = defaultButtonColor;
             dateButton.style.color = 'white';
             dateButton.style.border = 'none';
@@ -2001,7 +1979,7 @@
                 dateButton.style.backgroundColor = isButtonSelected(dateButton) ? activeButtonColor : defaultButtonColor;
             };
 
-            let isNewOrder = true; // Флаг для отслеживания порядка сортировки
+            let isNewOrder = true; 
 
             dateButton.onclick = () => {
                 if(isButtonSelected(scoreButton)) {
@@ -2054,7 +2032,6 @@
 
                     randomizeButton.style.marginLeft = '50px';
                     headerContainer.style.flexDirection = 'row';
-                    //headerContainer.style.justifyContent = 'space-between';
                     headerContainer.style.alignItems = 'center';
                     headerContainer.style.position = 'relative';
                     headerContainer.style.marginTop = '0px';
@@ -2124,7 +2101,7 @@
                     imageCountContainer.appendChild(toggleRemoveLabelContainer);
                     imageCountContainer.style.flexDirection = 'row';
                     imageCountContainer.style.position = 'relative';
-                    imageCountContainer.style.display = 'flex'; // Устанавливаем flexbox
+                    imageCountContainer.style.display = 'flex';
 
                     pageSizeSelector.style.marginLeft = '0px';
 
@@ -2217,24 +2194,20 @@
         const bottomSpacer = document.createElement('div');
         bottomSpacer.style.width = '100%';
         bottomSpacer.style.height = '50px';
-        bottomSpacer.style.flexShrink = '0'; // Предотвращает сжатие элемента в flex-контейнере
+        bottomSpacer.style.flexShrink = '0';
         bottomSpacer.style.display = 'block';
 
         if (isMobile) {
             
             document.addEventListener('touchmove', function(event) {
-                const scrollPosition = window.scrollY; // Текущая позиция прокрутки
-                const maxScroll = document.documentElement.scrollHeight - window.innerHeight; // Максимальная прокрутка
+                const scrollPosition = window.scrollY; 
+                const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
             
                 if (scrollPosition >= maxScroll && event.touches[0].clientY > 0) {
-                    // Находимся внизу и пользователь пытается смахнуть вверх
                     event.preventDefault();
                 }
             }, { passive: false });
             
-            /*setTimeout(() => {
-                scrollToTop();
-            }, 300);*/
         }
 
         document.title = tabTitle || 'Results';
@@ -2287,10 +2260,9 @@
             removeLabel.style.display = removeLabelsShown ? 'inline' : 'none';
             removeLabel.textContent = 'Remove';
 
-            // Обновляем высоту resultItem в зависимости от состояния кнопки
             function updateResultItemHeight() {
                 if (!isMobile) {
-                    resultItem.style.height = removeLabel.style.display === 'inline' ? '275px' : '250px'; // Высота с кнопкой
+                    resultItem.style.height = removeLabel.style.display === 'inline' ? '275px' : '250px'; 
                 }
             }
 
@@ -2310,7 +2282,6 @@
                                 results.splice(indexToRemove, 1);
                             }
                             if (indexToRemoveCurrent > -1) {
-                                //currentResults.splice(indexToRemoveCurrent, 1);
                                 currentResults[indexToRemoveCurrent] = null;
                             }
                             element.remove();
@@ -2337,11 +2308,9 @@
             imagesContainer.appendChild(resultItem);
 
 
-            // Следим за состоянием отображения кнопки и обновляем высоту
             const observer = new MutationObserver(() => updateResultItemHeight());
             observer.observe(removeLabel, { attributes: true, attributeFilter: ['style'] });
 
-            // Инициализируем высоту
             updateResultItemHeight();
         }
     }
@@ -2413,10 +2382,8 @@
                     target.getAttribute("onclick") &&
                     target.getAttribute("onclick").includes("favorites&s=delete")
                 ) {  
-                    // Извлекаем строку из атрибута onclick
                     const onclickCode = target.getAttribute("onclick");
         
-                    // Извлекаем ID из строки onclick
                     const idMatch = onclickCode.match(/id=(\d+)/);
                     if (idMatch) {
                         const id = idMatch[1];
@@ -2537,7 +2504,6 @@
             if (borderFavs) {
                 console.log("explore init");
 
-                // Отслеживание переключения вкладок
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'visible') {
                         handleUserReturn();
