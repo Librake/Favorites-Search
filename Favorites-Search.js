@@ -1695,6 +1695,38 @@
                         openNextPage();
                     }
                 });
+
+                if (isMobile) {
+                    let touchStartX = 0; // Начальная координата по оси X
+                    let touchEndX = 0;   // Конечная координата по оси X
+
+                    // Функция для обработки начала касания
+                    function handleTouchStart(event) {
+                        touchStartX = event.touches[0].clientX;
+                    }
+
+                    // Функция для обработки завершения касания
+                    function handleTouchEnd(event) {
+                        touchEndX = event.changedTouches[0].clientX;
+
+                        // Вычисляем разницу координат
+                        const deltaX = touchEndX - touchStartX;
+
+                        // Условие для свайпа вправо или влево
+                        if (Math.abs(deltaX) > 100) { // Убедимся, что свайп достаточно длинный
+                            if (deltaX > 0) {
+                                openPrevPage(); // Свайп вправо (предыдущая страница)
+                            } else {
+                                openNextPage(); // Свайп влево (следующая страница)
+                            }
+                        }
+                    }
+
+                    // Привязка обработчиков к контейнеру результата
+                    resultContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+                    resultContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+                }
             }
         
             // Элемент для отображения номера текущей страницы
@@ -2200,9 +2232,9 @@
                 }
             }, { passive: false });
             
-            setTimeout(() => {
+            /*setTimeout(() => {
                 scrollToTop();
-            }, 300);
+            }, 300);*/
         }
 
         document.title = tabTitle || 'Results';
@@ -2214,6 +2246,7 @@
         resultContainer.appendChild(bottomControls.paginationContainer);
         if (isMobile) resultContainer.appendChild(bottomSpacer);
         document.body.appendChild(resultContainer);
+        scrollToTop();
 
         function updateCurrentResults(shuffledResults) {
             currentPage = 1;
