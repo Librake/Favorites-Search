@@ -242,9 +242,7 @@
     
             localStorage.setItem('additionalQueue', JSON.stringify(additionalQueue));
     
-            console.log(`ID ${id} успешно удален из additionalQueue.`);
         } else {
-            console.log(`ID ${id} не найден в additionalQueue.`);
         }
     }
     
@@ -416,7 +414,6 @@
             fetch(`https://ac.rule34.xxx/autocomplete.php?q=${value}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data);
                     closeAllLists();
                     autocompleteOpen = true;
                     const autocomplete = createAutocomplete();
@@ -598,7 +595,6 @@
             searchInput.removeEventListener('keyup', handleAutocompleteClear, 'autocomplete');
             closeAllLists();
             inputWrapper.querySelector('input').addEventListener('keyup', handleSearchBar, true);
-            console.log('Autocomplete destroyed');
         }
 
         function createSearchInput() {
@@ -648,7 +644,6 @@
             });
             function toggleActiveState(element, isActive) {
                 if (isMobile) {
-                    console.log(element);
                     element.childNodes[0].style.backgroundColor = isActive ? '#2196F3' : '#e0e0e0';
                     element.childNodes[0].style.color = isActive ? '#fff' : '#555';
                 } else {
@@ -2387,7 +2382,6 @@
                     const idMatch = onclickCode.match(/id=(\d+)/);
                     if (idMatch) {
                         const id = idMatch[1];
-                        console.log(`ID для удаления: ${id}`);
                         removeFromAdditionalQueue(id);
                         addToRemovalQueue(id);
                     }
@@ -2464,14 +2458,12 @@
             const originalAddFav = window.addFav;
 
             window.addFav = function(postId) {
-                console.log(`Image with ID ${postId} added to favorites`);
                 addToAdditionalQueue(postId);
                 originalAddFav.apply(this, arguments);
             };
         }
 
         function handleUserReturn() {
-            console.log('User returned to the page');
             const additionalQueue = getAdditionalQueue();
             const additionalSet = new Set();
             additionalQueue.forEach(id => {
@@ -2502,7 +2494,6 @@
             borderFavs = savedborderFavs ? JSON.parse(savedborderFavs) : true;
 
             if (borderFavs) {
-                console.log("explore init");
 
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'visible') {
