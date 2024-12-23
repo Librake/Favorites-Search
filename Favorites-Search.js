@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Rule34 Favorites Search dev
+// @name         Rule34 Favorites Search
 // @version      1.3
 // @description  Adds a search bar to the Favorites page
 // @author       Librake
