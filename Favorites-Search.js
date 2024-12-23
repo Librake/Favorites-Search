@@ -397,89 +397,91 @@
             return autocomplete;
         }
         function handleAutoComplete(event) {
-                let value = this.value;
-                if (!value || value.length === 0) {
-                    closeAllLists();
-                    return false;
-                }
-
-                value = value.trim().split(' ').pop();
-                let hasMinus = false;
-                // If value has - at the beginning, remove it
-
-                if (value[0] === '-') {
-                    hasMinus = true;
-                    value = value.substr(1);
-                }
-
+            let value = this.value;
+            if (!value || value.length === 0) {
                 closeAllLists();
-                currentFocus = -1;
+                return false;
+            }
 
-                fetch(`https://ac.rule34.xxx/autocomplete.php?q=${value}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        closeAllLists();
-                        autocompleteOpen = true;
-                        const autocomplete = createAutocomplete();
-                    
-                        this.parentNode.appendChild(autocomplete);
-                        if (data.length === 0) {
-                            autocomplete.remove();
-                            return false;
-                        }
-                        data.forEach(item => {
-                            const option = document.createElement('div');
-                            option.classList.add(`tag-type-${item.type}`);
-                            //option.innerHTML = `<mark style="background-color: ${darkMode ? 'rgba(82, 82, 20, 0.8)' : 'rgba(255, 255, 0, 0.7)'}; padding: 0;">${item.label.substr(0, value.length)}</mark>${item.label.substr(value.length)}`;
+            const lastChar = value.slice(-1);
+            if (lastChar === ' ') value = '';
 
-                            const mark = document.createElement('mark');
-                            mark.textContent = item.label.substr(0, value.length);
-                            mark.style.backgroundColor = darkMode ? 'rgba(82, 82, 20, 0.8)' : 'rgba(255, 255, 0, 0.7)';
-                            mark.style.padding = '0';
+            value = value.trim().split(' ').pop();
+            let hasMinus = false;
+            // If value has - at the beginning, remove it
 
-                            const remainingText = document.createTextNode(item.label.substr(value.length));
-                            option.innerHTML = ''; // Очистим содержимое перед добавлением
-                            option.appendChild(mark);
-                            option.appendChild(remainingText);
+            if (value[0] === '-') {
+                hasMinus = true;
+                value = value.substr(1);
+            }
 
-                            option.style.cursor = 'pointer';
-                            option.style.padding = '3px 0'; // Внутренние отступы сверху и снизу
-                            //option.style.textAlign = 'center'; // Центрирование текста (по желанию)
-                            option.style.display = 'flex'; // Включаем flexbox
-                            option.style.alignItems = 'center'; // Центрируем содержимое по вертикали
-                            option.style.justifyContent = 'flex-start'; // Дополнительно, если нужно выравнивание текста слева
+            closeAllLists();
+            currentFocus = -1;
 
-                            //option.style.marginBottom = '5px'; // Настройте значение по вашему вкусу
+            console.log(value);
 
-                            option.innerHTML += `<input type="hidden" value="${item.value}">`;
-                            option.addEventListener('click', function(e) {
-                                const optionValue = hasMinus ? `-${this.getElementsByTagName('input')[0].value}` : this.getElementsByTagName('input')[0].value;
-                                const tags = searchInput.value.split(' ');
-                                tags.pop();
-                                tags.push(optionValue);
-                                tags.push('');
-                                searchInput.value = tags.join(' ');
-                                closeAllLists();
-                            });
-                            option.addEventListener('mouseover', function() {
-                                const items = autocomplete.getElementsByTagName('div');
-                                for (let i = 0; i < items.length; i++) {
-                                    items[i].style.backgroundColor = '';
-                                    items[i].style.textShadow = '';
-                                }
+            fetch(`https://ac.rule34.xxx/autocomplete.php?q=${value}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    closeAllLists();
+                    autocompleteOpen = true;
+                    const autocomplete = createAutocomplete();
+                
+                    this.parentNode.appendChild(autocomplete);
+                    if (data.length === 0) {
+                        autocomplete.remove();
+                        return false;
+                    }
+                    data.forEach(item => {
+                        const option = document.createElement('div');
+                        option.classList.add(`tag-type-${item.type}`);
+                        
+                        const mark = document.createElement('mark');
+                        mark.textContent = item.label.substr(0, value.length);
+                        mark.style.backgroundColor = darkMode ? 'rgba(82, 82, 20, 0.8)' : 'rgba(255, 255, 0, 0.7)';
+                        mark.style.padding = '0';
 
-                                this.style.backgroundColor = darkMode ? '#505a50' : 'hsl(0, 0.00%, 90.60%)';
-                                if (darkMode) this.style.textShadow = "1px 1px 1px #000,-1px -1px 1px #000,1px -1px 1px #000,-1px 1px 1px #000";
-                                currentFocus = Array.prototype.indexOf.call(items, this);
-                                autocompleteOpen = true;
-                            });
-                            option.addEventListener('mouseleave', function() {
-                                this.style.textShadow = '';
-                                this.style.backgroundColor = '';
-                            });
-                            autocomplete.appendChild(option);
+                        const remainingText = document.createTextNode(item.label.substr(value.length));
+                        option.innerHTML = ''; // Очистим содержимое перед добавлением
+                        option.appendChild(mark);
+                        option.appendChild(remainingText);
+
+                        option.style.cursor = 'pointer';
+                        option.style.padding = '3px 0'; // Внутренние отступы сверху и снизу
+                        option.style.display = 'flex'; // Включаем flexbox
+                        option.style.alignItems = 'center'; // Центрируем содержимое по вертикали
+                        option.style.justifyContent = 'flex-start'; // Дополнительно, если нужно выравнивание текста слева
+
+                        option.innerHTML += `<input type="hidden" value="${item.value}">`;
+                        option.addEventListener('click', function(e) {
+                            const optionValue = hasMinus ? `-${this.getElementsByTagName('input')[0].value}` : this.getElementsByTagName('input')[0].value;
+                            const tags = searchInput.value.split(' ');
+                            tags.pop();
+                            tags.push(optionValue);
+                            tags.push('');
+                            searchInput.value = tags.join(' ');
+                            closeAllLists();
                         });
+                        option.addEventListener('mouseover', function() {
+                            const items = autocomplete.getElementsByTagName('div');
+                            for (let i = 0; i < items.length; i++) {
+                                items[i].style.backgroundColor = '';
+                                items[i].style.textShadow = '';
+                            }
+
+                            this.style.backgroundColor = darkMode ? '#505a50' : 'hsl(0, 0.00%, 90.60%)';
+                            if (darkMode) this.style.textShadow = "1px 1px 1px #000,-1px -1px 1px #000,1px -1px 1px #000,-1px 1px 1px #000";
+                            currentFocus = Array.prototype.indexOf.call(items, this);
+                            autocompleteOpen = true;
+                        });
+                        option.addEventListener('mouseleave', function() {
+                            this.style.textShadow = '';
+                            this.style.backgroundColor = '';
+                        });
+                        autocomplete.appendChild(option);
                     });
+                });
         }
         function handleAutocompleteSelection(event) {
 
@@ -505,6 +507,13 @@
                     }
                 } else if (currentFocus === -1) {
                     search();
+                }
+            } else if (event.key === 'Tab') {
+                event.preventDefault();
+                if (currentFocus > -1) {
+                    if (list) {
+                        list[currentFocus].click();
+                    }
                 }
             }
         }
