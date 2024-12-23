@@ -1700,7 +1700,7 @@
                 const totalPages = Math.ceil(currentResults.length / imagesPerPage);
                 pageIndicator.textContent = `${currentPage}/${totalPages}`;
                 prevButton.disabled = currentPage === 1;
-                nextButton.disabled = currentPage >= totalPages;
+                nextButton.disabled = currentPage >= totalPages;          
             }
         
             const nextButton = document.createElement('button');
@@ -1722,12 +1722,6 @@
             return { paginationContainer, prevButton, nextButton, updatePageIndicator };
         }
         
-
-        // Обновляем кнопки пагинации
-        function updatePaginationButtons(prevButton, nextButton) {
-            prevButton.disabled = currentPage === 1;
-            nextButton.disabled = currentPage * imagesPerPage >= results.length;
-        }
 
 
         localStorage.setItem('inputTags', JSON.stringify(inputTags));
@@ -2007,16 +2001,8 @@
             topPageControls.appendChild(paginationContainer);
             topPageControls.appendChild(pageSizeSelector);
 
-            
-            
-            // При обновлении страницы обновляем кнопки
-            setInterval(() => {
-                updatePaginationButtons(prevButton, nextButton);
-            }, 100);
-
 
             selectButton(dateButton);
-
 
             function updateLayout() {
                 const screenWidth = window.innerWidth || document.documentElement.clientWidth;
