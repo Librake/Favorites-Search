@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Rule34 Favorites Search
-// @version      1.3
+// @version      1.3.1
 // @description  Adds a search bar to the Favorites page
 // @author       Librake
 // @namespace    https://discord.gg/jZzYFNeCTw
@@ -25,6 +25,8 @@
 // - Fixed removing without page reload and script reset
 // - Fixed Favorites detection on other pages without rescan
 
+// === Version 1.3.1 Changelog ===
+// - Fixed results page reload when adding a new favorite
 
 
 (function () {
@@ -1565,6 +1567,7 @@
 
     function displayResultsInModal(tabTitle = 'Fav Search', columnWidth = 250) {
         const bgColor = getBgColor();
+        document.removeEventListener('visibilitychange', visibilityChangeHandler);
 
         document.body.innerHTML = '';
 
@@ -2346,6 +2349,12 @@
         });
     }
 
+    function visibilityChangeHandler() {
+        if (document.visibilityState === 'visible') {
+            switchedToFavPage();
+        }
+    }
+
     function checkForUpdate() {
         const savedVersion = localStorage.getItem('scriptVersion');
         if (savedVersion) {
@@ -2389,11 +2398,7 @@
             },
             true
         );
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                switchedToFavPage();
-            }
-        });
+        document.addEventListener('visibilitychange', visibilityChangeHandler);
         
         getFavoritesCount(userId).then(favoritesCount => {
             actualFavCount = favoritesCount;
