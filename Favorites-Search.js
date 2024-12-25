@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         Rule34 Favorites Search
-// @version      1.3.3
+// @name         Rule34 Favorites Search dev
+// @version      1.4
 // @description  Adds a search bar to the Favorites page
 // @author       Librake
 // @namespace    https://discord.gg/jZzYFNeCTw
@@ -16,20 +16,8 @@
 // ==/UserScript==
 
 
-// === Version 1.3 Changelog ===
-// - Search tags autocomplete in Verbatim mode
-// - Sort Score and other sorting options
-// - Results pagination
-// - Toggle to hide blacklisted images
-// - Auto refresh Favorites page if you added new favorites
-// - Fixed removing without page reload and script reset
-// - Fixed Favorites detection on other pages without rescan
-
-// === Version 1.3.1 Changelog ===
-// - Fixed results page reload when adding a new favorite
-
-// === Version 1.3.2/3 Changelog ===
-// - Live border fix for favorites detection
+// === Version 1.4 Changelog ===
+// - text
 
 (function () {
     'use strict';
@@ -1566,12 +1554,71 @@
         }
     }
 
+    async function getPostInfo(postId) {
+        const url = `https://rule34.xxx/index.php?page=post&s=view&id=${postId}`;
+    
+        // Делаем запрос на указанную страницу
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Получаем текст страницы
+        const html = await response.text();
+
+        // Парсим HTML с помощью DOMParser
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        // Ищем элемент с ID "tag-sidebar"
+        const tagSidebar = doc.querySelector("#tag-sidebar");
+
+
+        function getTagNamesByType(type) {
+            const listItems = tagSidebar.querySelectorAll(`.tag-type-${type}`);
+        
+            const tagsInfo = [];
+        
+            listItems.forEach(listItem => {
+                const secondLink = listItem.querySelectorAll("a")[1];
+        
+                if (secondLink) {
+                    // Извлекаем tag из href
+                    const href = secondLink.getAttribute("href");
+                    const tagMatch = href.match(/tags=([^&]*)/);
+        
+                    if (tagMatch) {
+                        const tag = tagMatch[1]; // Извлеченный tag из параметра "tags"
+                        const text = secondLink.textContent; // Текст внутри тега <a>
+        
+                        tagsInfo.push({ tag, text });
+                    }
+                }
+            });
+        
+            return tagsInfo;
+        }
+
+        // Извлекаем тэги для каждой категории
+        const copyrights = getTagNamesByType('copyright');
+        const characters = getTagNamesByType('character');
+        const artists = getTagNamesByType('artist');
+
+        return { copyrights, characters, artists };
+    }
+    
 
     function displayResultsInModal(tabTitle = 'Fav Search', columnWidth = 250) {
         const bgColor = getBgColor();
         document.removeEventListener('visibilitychange', visibilityChangeHandler);
 
         document.body.innerHTML = '';
+
+
+        /*(async () => {
+            const postInfo = await getPostInfo(11995888); // Замените 123456 на нужный ID поста
+            console.log(postInfo);
+        })();*/
 
         const defaultPageSize = 50;
         const savedImagesPerPage = localStorage.getItem('imagesPerPage') || defaultPageSize;
