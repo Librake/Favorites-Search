@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Rule34 Favorites Search
-// @version      1.3.2
+// @version      1.3.3
 // @description  Adds a search bar to the Favorites page
 // @author       Librake
 // @namespace    https://discord.gg/jZzYFNeCTw
@@ -28,7 +28,7 @@
 // === Version 1.3.1 Changelog ===
 // - Fixed results page reload when adding a new favorite
 
-// === Version 1.3.2 Changelog ===
+// === Version 1.3.2/3 Changelog ===
 // - Live border fix for favorites detection
 
 (function () {
@@ -2518,7 +2518,7 @@
             window.addFav = function(postId) {
                 addToAdditionalQueue(postId);
                 originalAddFav.apply(this, arguments);
-                addImageBorderById(postId);
+                if (borderFavs) addImageBorderById(postId);
             };
 
             const savedborderFavs = localStorage.getItem('borderFavs');
