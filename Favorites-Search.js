@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Rule34 Favorites Search
-// @version      1.3.1
+// @version      1.3.2
 // @description  Adds a search bar to the Favorites page
 // @author       Librake
 // @namespace    https://discord.gg/jZzYFNeCTw
@@ -28,6 +28,8 @@
 // === Version 1.3.1 Changelog ===
 // - Fixed results page reload when adding a new favorite
 
+// === Version 1.3.2 Changelog ===
+// - Live border fix for favorites detection
 
 (function () {
     'use strict';
@@ -2494,7 +2496,31 @@
             }
         }
 
+        function addImageBorderById(id) {
+            const spanId = `s${id}`;
+
+            const targetSpan = document.getElementById(spanId);
+
+            if (targetSpan) {
+                const img = targetSpan.querySelector('img');
+
+                if (img) {
+                    img.style.border = `${BORDER_THICKNESS}px solid ${BORDER_COLOR}`;
+                }
+            } else {
+                console.error(`Not found span with ID ${spanId}`);
+            }
+        }
+
         function highlightFavs() {
+            const originalAddFav = window.addFav;
+
+            window.addFav = function(postId) {
+                addToAdditionalQueue(postId);
+                originalAddFav.apply(this, arguments);
+                addImageBorderById(postId);
+            };
+
             const savedborderFavs = localStorage.getItem('borderFavs');
             borderFavs = savedborderFavs ? JSON.parse(savedborderFavs) : true;
 
