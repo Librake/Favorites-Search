@@ -62,7 +62,7 @@
     let allImages = [];
     let loadedImages = [];
     let images;
-    let results = [];
+    let parsedImages = [];
     let searchTag = "";
     let searchTags = [];
     let negativeTags = [];
@@ -262,26 +262,7 @@
     }
 
     function saveAllImagesToLocalStorage() {
-        const allImagesData = [];
-        allImagesData.push(...allImages.map(img => ({
-            src: img.getAttribute('src'),
-            title: img.getAttribute('title'),
-            link: `index.php?page=post&s=view&id=${getThumbImgId(img)}`,
-            id: getThumbImgId(img),
-            score: img.score
-        })));
-
-        if (appendLoadedSave) {
-            allImagesData.push(...loadedImages.map(img => ({
-                src: img.src,
-                title: img.title,
-                link: img.link,
-                id: img.id,
-                score: img.score
-            })));
-        }
-
-        const jsonStr = JSON.stringify(allImagesData);
+        const jsonStr = JSON.stringify(parsedImages);
 
         const compressedData = localLZString.compressToUTF16(jsonStr);
         try {
@@ -1315,32 +1296,27 @@
         }
         return null;
     }
-    async function extractImagesAndTags(doc, loadedImgs) {
-        const postScores = new Map();
 
-        if (loadedImgs) {
-            images = loadedImgs;
+    function parseAndPushImage(image, isAlreadyParsed) {
+        if (isAlreadyParsed) {
+            parsedImages.push(image);
         }
         else {
-            const scripts = doc.querySelectorAll('script');
-            const postRegex = /posts\[(\d+)]\s*=\s*{[\s\S]*?score:\s*['"](\d+)['"]/g;
-
-
-            scripts.forEach((script) => {
-                if (script.textContent.includes('score:')) {
-                    const scriptContent = script.textContent;
-
-                    let match;
-                    while ((match = postRegex.exec(scriptContent)) !== null) {
-                        const postId = match[1];
-                        const score = match[2];
-                        postScores.set(postId, score);
-                    }
-                }
+            const imageId = getThumbImgId(image);
+            const postLink = `index.php?page=post&s=view&id=${imageId}`
+            parsedImages.push({
+                link: postLink,
+                src: image.src,
+                id: imageId,
+                title: image.title,
+                score: image.score
             });
-
-            images = doc.querySelectorAll('.thumb img[src]');
         }
+    }
+
+    function filterImagesBySearchRequest(parsedImages) {
+        const filteredImages = [];
+
         if (useBlacklist) {
             const blacklistedTags = getCookieValue('tag_blacklist');
             if (blacklistedTags) {
@@ -1349,14 +1325,8 @@
                 });
             }
         }
-        images.forEach(image => {
-            if (!loadedImgs) {
-                const imgId = getThumbImgId(image);
-                image.score = postScores.get(imgId) || null;
-                
-                allImages.push(image);
-            }
 
+        parsedImages.forEach(image => {
             let tags = '';
             if (hardSearch) {
                 tags = image.title.trim().split(' ');
@@ -1396,30 +1366,56 @@
                 });
 
                 if (!negatived) {
-
-                    if (loadedImgs) {
-                        results.push({
-                            link: image.link,
-                            src: image.src,
-                            id: image.link.split('id=')[1],
-                            video: image.title.trim().split(' ').includes('video'),
-                            score: image.score
-                        });
-                    }
-                    else {
-                        const imageId = getThumbImgId(image);
-                        const postLink = `index.php?page=post&s=view&id=${imageId}`
-                        results.push({
-                            link: postLink,
-                            src: image.src,
-                            id: imageId,
-                            video: image.title.trim().split(' ').includes('video'),
-                            score: image.score
-                        });
-                    }
-
+                    filteredImages.push({
+                        link: image.link,
+                        src: image.src,
+                        id: image.id,
+                        video: image.title.trim().split(' ').includes('video'),
+                        score: image.score
+                    });
                 }
             }
+        });
+
+        return filteredImages;
+    }
+
+    async function extractImagesAndTags(doc, loadedImgs) {
+        const postScores = new Map();
+
+        if (loadedImgs) {
+            images = loadedImgs;
+        }
+        else {
+            const scripts = doc.querySelectorAll('script');
+            const postRegex = /posts\[(\d+)]\s*=\s*{[\s\S]*?score:\s*['"](\d+)['"]/g;
+
+
+            scripts.forEach((script) => {
+                if (script.textContent.includes('score:')) {
+                    const scriptContent = script.textContent;
+
+                    let match;
+                    while ((match = postRegex.exec(scriptContent)) !== null) {
+                        const postId = match[1];
+                        const score = match[2];
+                        postScores.set(postId, score);
+                    }
+                }
+            });
+
+            images = doc.querySelectorAll('.thumb img[src]');
+        }
+
+        images.forEach(image => {
+            if (!loadedImgs) {
+                const imgId = getThumbImgId(image);
+                image.score = postScores.get(imgId) || null;
+                
+                allImages.push(image);
+            }
+
+            parseAndPushImage(image, loadedImgs != null);
         });
         if (!loadedImgs && images.length) {
             lastImageId = getThumbImgId(images[images.length - 1]);
@@ -1428,7 +1424,8 @@
 
     function loadAllPages() {
         extractImagesAndTags(false, loadedImages);
-        displayResultsInModal();
+        const results = filterImagesBySearchRequest(parsedImages);
+        displayResultsInModal(results);
     }
 
     async function searchAllPages(startPage = 0) {
@@ -1484,7 +1481,8 @@
 
         await Promise.all(fetchPromises);
 
-        displayResultsInModal();
+        const results = filterImagesBySearchRequest(parsedImages);
+        displayResultsInModal(results);
     }
 
     async function searchNewPages() {
@@ -1546,7 +1544,9 @@
             loadedImages.splice(0, indexToDelete + 1);
             extractImagesAndTags(false, loadedImages);
             appendLoadedSave = true;
-            displayResultsInModal();
+
+            const results = filterImagesBySearchRequest(parsedImages);
+            displayResultsInModal(results);
         }
         else {
             await delay(100);
@@ -1607,13 +1607,19 @@
         return { copyrights, characters, artists };
     }
     
+    function research() {
+        //results = [];
+        displayResultsInModal();
+    }
 
-    function displayResultsInModal(tabTitle = 'Fav Search', columnWidth = 250) {
+    function displayResultsInModal(results, tabTitle = 'Fav Search', columnWidth = 250) {
         const bgColor = getBgColor();
         document.removeEventListener('visibilitychange', visibilityChangeHandler);
 
         document.body.innerHTML = '';
 
+
+        console.log(parsedImages[1000]);
 
         /*(async () => {
             const postInfo = await getPostInfo(11995888); // Замените 123456 на нужный ID поста
@@ -2352,6 +2358,29 @@
             `;
 
             resultItem.appendChild(removeLabel);
+
+
+             // Добавляем кнопку для вызова getPostInfo
+            const infoButton = document.createElement('button');
+            infoButton.textContent = 'Info';
+            infoButton.style.position = 'absolute';
+            infoButton.style.right = '10px';
+            infoButton.style.top = '50%';
+            infoButton.style.transform = 'translateY(-50%)';
+            infoButton.style.padding = '5px 10px';
+            infoButton.style.fontSize = '12px';
+            infoButton.style.cursor = 'pointer';
+
+            infoButton.onclick = async (event) => {
+                event.preventDefault();
+                const postInfo = await getPostInfo(result.id); 
+                console.log(postInfo);
+                research();
+            };
+
+            //resultItem.appendChild(infoButton);
+
+
             imagesContainer.appendChild(resultItem);
 
 
